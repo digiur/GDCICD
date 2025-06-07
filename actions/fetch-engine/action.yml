@@ -1,0 +1,120 @@
+name: 'Godot Download Engine'
+description: 'Downloads Godot engine binaries and export templates by tag from GitHub releases'
+
+inputs:
+  godot_release_tag:
+    description: 'GitHub release tag for Godot engine (e.g., "4.4.1-stable")'
+    # This should match the tag format used in Godot releases
+    # For example, "4.4.1-stable" for Godot 4.4.1 stable release
+    # https://github.com/godotengine/godot/tags
+    default: "latest"
+
+  target_release_asset:
+    description: 'Target executable Godot engine from release(e.g., "linux.x86_64", "windows.x86_64")'
+    # This should match the naming convention used in Godot releases
+    # For example, "linux.x86_64" for Linux, "windows.x86_64" for Windows, etc.
+    # https://github.com/godotengine/godot/releases
+    default: "stable_linux.x86_64"
+
+  output_path:
+    description: 'Path and filename for the downloaded Godot executable'
+    # Output path for the downloaded Godot binary
+    # Leave this default if using the digiur `build-project` action
+    default: "GodotEngine"
+
+  use_mono_templates:
+    # If set to true, make sure target_release_asset is a mono build
+    description: 'If true, use the mono export templates; if false, use the standard templates'
+    default: "false"
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 📋 Inputds 📋
+      run: |
+        set -e
+        echo "godot_release_tag: ${{ inputs.godot_release_tag }}"
+        echo "target_release_asset: ${{ inputs.target_release_asset }}"
+        echo "output_path: ${{ inputs.output_path }}"
+        echo "use_mono_templates: ${{ inputs.use_mono_templates }}"
+      shell: bash
+
+    - name: 🛰️ Find Godot Release 🛰️
+      run: |
+        set -e
+        if [ "${{ inputs.godot_release_tag }}" = "latest" ]; then
+          echo "Fetching latest release..."
+          GH_API="https://api.github.com/repos/godotengine/godot-builds/releases/latest"
+        else
+          echo "Fetching release by tag: ${{ inputs.godot_release_tag }}"
+          GH_API="https://api.github.com/repos/godotengine/godot-builds/releases/tags/${{ inputs.godot_release_tag }}"
+        fi
+
+        echo "Using GitHub API endpoint: $GH_API"
+
+        RELEASE_JSON=$(curl -s "$GH_API")
+        TAG_NAME=$(echo "$RELEASE_JSON" | jq -r .tag_name)
+
+        echo "Actual tag name: $TAG_NAME"
+
+        ENGINE_URLS=$(echo "$RELEASE_JSON" | jq -r ".assets[] | select(.name | test(\"${{ inputs.target_release_asset }}.zip$\") ) | .browser_download_url")
+        ENGINE_URL_COUNT=$(echo "$ENGINE_URLS" | grep -c . || true)
+        if [ "$ENGINE_URL_COUNT" -eq 0 ]; then
+          echo "❌ No asset found matching target_release_asset: '${{ inputs.target_release_asset }}'"
+          exit 1
+        elif [ "$ENGINE_URL_COUNT" -gt 1 ]; then
+          echo "❌ More than one asset matched target_release_asset: '${{ inputs.target_release_asset }}'"
+          echo "Matches:"
+          echo "$ENGINE_URLS"
+          exit 1
+        fi
+        ENGINE_URL="$ENGINE_URLS"
+
+        TEMPLATES_URLS=($(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | test("export_templates.tpz$")) | .browser_download_url'))
+        TEMPLATES_URL_COUNT=${#TEMPLATES_URLS[@]}
+        if [ "$TEMPLATES_URL_COUNT" -ne 2 ]; then
+          echo "❌ Expected exactly 2 export templates assets (standard and mono), but found $TEMPLATES_URL_COUNT:"
+          printf '%s\n' "${TEMPLATES_URLS[@]}"
+          exit 1
+        fi
+
+        if [ "${{ inputs.use_mono_templates }}" = "true" ]; then
+          TEMPLATES_URL="${TEMPLATES_URLS[1]}"
+        else
+          TEMPLATES_URL="${TEMPLATES_URLS[0]}"
+        fi
+
+        echo "Found engine URL: $ENGINE_URL"
+        echo "Selected export templates URL: $TEMPLATES_URL"
+
+        echo "ENGINE_URL=$ENGINE_URL" >> $GITHUB_ENV
+        echo "TEMPLATES_URL=$TEMPLATES_URL" >> $GITHUB_ENV
+        echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+      shell: bash
+
+    - name: 📡 Download Engine and Templates 📡
+      run: |
+        set -e
+        echo "Downloading engine: $ENGINE_URL"
+        curl -L "$ENGINE_URL" -o godot.zip
+        echo "Downloading export templates: $TEMPLATES_URL"
+        curl -L "$TEMPLATES_URL" -o templates.tpz
+      shell: bash
+
+    - name: 🪄 Extract Engine and Templates 🪄
+      run: |
+        set -e
+        unzip -j godot.zip -d .
+        unzip templates.tpz -d .
+        TEMPLATES_DIR=$(echo "$TAG_NAME" | sed 's/-/./g')
+        EXECUTABLE=$(ls Godot*${{ inputs.target_release_asset }}* | head -n1)
+        mv "$EXECUTABLE" "${{ inputs.output_path }}"
+
+        echo "Engine binary moved to ${{ inputs.output_path }}"
+
+        mkdir -p ~/.local/share/godot/export_templates/"$TEMPLATES_DIR"
+        mv templates/* ~/.local/share/godot/export_templates/"$TEMPLATES_DIR"/
+
+        echo "Export templates installed to: ~/.local/share/godot/export_templates/$TEMPLATES_DIR"
+        ls -lh ~/.local/share/godot/export_templates/"$TEMPLATES_DIR"
+      shell: bash

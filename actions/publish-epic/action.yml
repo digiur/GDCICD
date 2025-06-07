@@ -1,12 +1,15 @@
 name: 'Godot Publish to Epic Games Store'
-description: 'Publishes exported build to Epic (stub, implement as needed)'
+description: 'Publishes exported build to Epic (stub)'
 inputs:
+
   epic_credentials:
     description: 'Epic credentials or token (TBD)'
-    required: false
+    required: true
+
   build_path:
     description: 'Path to exported build'
-    required: true
+    default: "builds/web/epic"
+
 runs:
   using: 'composite'
   steps:

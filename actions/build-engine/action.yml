@@ -1,0 +1,135 @@
+name: 'Godot Build Engine from Source'
+description: 'Builds the Godot engine and export templates from source for specified tag'
+
+inputs:
+  godot_ref:
+    description: 'Git ref, branch, or tag to checkout (e.g., "4.5-dev4", "master")'
+    # This should match the tag or branch you want to build from the Godot repository
+    # For example, "4.5-dev4" for a specific dev build, or "master" for the latest development version
+    # See: https://github.com/godotengine/godot
+    default: "master"
+
+  output_path:
+    description: 'Path and filename for the built Godot editor executable'
+    # Output path for the built Godot binary
+    # For example, "./GodotEngine" will place the binary in the workspace root
+    default: "./GodotEngine"
+
+  build_debug_templates:
+    description: 'If true, build debug export templates'
+    default: "false"
+
+  build_release_templates:
+    description: 'If true, build release export templates'
+    default: "true"
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 📝 Source Checkout Manifest 📝
+      run: |
+        set -e
+        echo "godot_ref: ${{ inputs.godot_ref }}"
+        echo "output_path: ${{ inputs.output_path }}"
+        echo "build_debug_templates: ${{ inputs.build_debug_templates }}"
+        echo "build_release_templates: ${{ inputs.build_release_templates }}"
+      shell: bash
+
+    - name: 🦉 Install SCons 🦉
+      run: |
+        set -e
+        sudo apt-get update
+        sudo apt-get install -y scons
+      shell: bash
+
+    - name: 🦜 Clone Godot 🦜
+      run: |
+        set -e
+        git clone --depth 1 --branch "${{ inputs.godot_ref }}" https://github.com/godotengine/godot.git godot-source
+        echo "Cloned repository contents:"
+        ls -lh godot-source
+      shell: bash
+
+    - name: 📦 SCons Cache 📦
+      uses: actions/cache@v4
+      with:
+        path: godot-source/.scons_cache
+        key: scons-cache-${{ runner.os }}-${{ inputs.godot_ref }}-${{ hashFiles('godot-source/SConstruct') }}
+        restore-keys: |
+          scons-cache-${{ runner.os }}-${{ inputs.godot_ref }}-
+          scons-cache-${{ runner.os }}-
+
+    - name: 🦅 Build Editor and Export Templates 🦅
+      run: |
+        set -e
+        cd godot-source
+
+        echo "Building editor..."
+        scons platform=linuxbsd target=editor -j$(nproc) cache=.scons_cache
+
+        if [ "${{ inputs.build_release_templates }}" = "true" ]; then
+          echo "Building export template_release..."
+          scons platform=linuxbsd target=template_release -j$(nproc) cache=.scons_cache
+        fi
+
+        if [ "${{ inputs.build_debug_templates }}" = "true" ]; then
+          echo "Building export template_debug..."
+          scons platform=linuxbsd target=template_debug -j$(nproc) cache=.scons_cache
+        fi
+
+        echo "Build output files:"
+        ls -lh bin/
+      shell: bash
+
+    - name: 🏗️ Assembling Workspace 🏗️
+      run: |
+        set -e
+
+        EDITOR_BIN=$(ls godot-source/bin/godot.linuxbsd.* | grep -v template | head -n1)
+        echo "Copying built editor binary: $EDITOR_BIN -> ${{ inputs.output_path }}"
+        cp "$EDITOR_BIN" "${{ inputs.output_path }}"
+
+        GODOT_VERSION=$("${{ inputs.output_path }}" --version | awk '{print $1}' | sed 's/-/./g')
+        TEMPLATES_DIR="$HOME/.local/share/godot/export_templates/$GODOT_VERSION"
+        mkdir -p "$TEMPLATES_DIR"
+
+        if [ "${{ inputs.build_debug_templates }}" = "true" ]; then
+          TEMPLATE_BIN=$(ls godot-source/bin/godot.linuxbsd.template_debug.* | head -n1)
+          if [ -f "$TEMPLATE_BIN" ]; then
+            echo "Copying $TEMPLATE_BIN to $TEMPLATES_DIR/"
+            cp "$TEMPLATE_BIN" "$TEMPLATES_DIR/"
+          else
+            echo "❌ Could not find built template: template_debug"
+            exit 1
+          fi
+        fi
+
+        if [ "${{ inputs.build_release_templates }}" = "true" ]; then
+          TEMPLATE_BIN=$(ls godot-source/bin/godot.linuxbsd.template_release.* | head -n1)
+          if [ -f "$TEMPLATE_BIN" ]; then
+            echo "Copying $TEMPLATE_BIN to $TEMPLATES_DIR/"
+            cp "$TEMPLATE_BIN" "$TEMPLATES_DIR/"
+          else
+            echo "❌ Could not find built template: template_release"
+            exit 1
+          fi
+        fi
+
+        echo "Export templates copied to $TEMPLATES_DIR"
+        ls -lh "$TEMPLATES_DIR"
+      shell: bash
+
+    - name: 🦚 Build Results Recap 🦚
+      run: |
+        set -e
+        echo "Final built Godot editor binary:"
+        ls -lh "${{ inputs.output_path }}"
+
+        echo "Export templates:"
+        GODOT_VERSION=$("${{ inputs.output_path }}" --version | awk '{print $1}' | sed 's/-/./g')
+        TEMPLATES_DIR="$HOME/.local/share/godot/export_templates/$GODOT_VERSION"
+        ls -lh "$TEMPLATES_DIR"
+
+        echo "SHA256 checksum:"
+        sha256sum "${{ inputs.output_path }}" || shasum -a 256 "${{ inputs.output_path }}" || echo "sha256sum not available"
+      shell: bash

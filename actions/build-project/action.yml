@@ -1,0 +1,71 @@
+name: 'Godot Build Project'
+description: 'Exports a Godot project for a given platform'
+
+inputs:
+  export_target:
+    description: 'Export preset name (e.g., web, windows, linux)'
+    # This should match the export preset name used in the Godot project
+    # For example, "web", "windows", "linux", etc.
+    default: "web"
+
+  export_path:
+    description: 'Output directory for exported game'
+    # This should be the directory where the exported game will be saved
+    # this OVERRIDES the default export path in the export preset
+    default: "builds/web"
+
+  export_file:
+    description: 'Output filename for exported game'
+    # This should be the filename for the exported game
+    # This OVERRIDES the default export filename in the export preset
+    default: "index.html"
+
+  godot_executable:
+    description: 'Path to Godot executable'
+    # Path to the Godot binary to use to export a project build
+    # Leave this default if using the Godot engine downloaded
+    # by the digiur `fetch-engine` or `build-engine` actions
+    default: "./GodotEngine"
+
+  project_path:
+    description: 'Path to the Godot project directory (default: .)'
+    # Path to the root of the Godot project
+    # (where the project.godot file is located)
+    default: .
+
+  uses_mono:
+    description: 'Whether the project uses Mono (C#)'
+    # Set to 'true' if the project uses Mono (C#) and requires Mono to be installed
+    default: "false"
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🗒️ Build Manifest 🗒️
+      run: |
+        set -e
+        echo "export_target: ${{ inputs.export_target }}"
+        echo "export_path: ${{ inputs.export_path }}"
+        echo "export_file: ${{ inputs.export_file }}"
+        echo "godot_executable: ${{ inputs.godot_executable }}"
+        echo "project_path: ${{ inputs.project_path }}"
+        echo "uses_mono: ${{ inputs.uses_mono }}"
+      shell: bash
+
+    - name: 🛠️ Install Mono (if needed) 🛠️
+      if: ${{ inputs.uses_mono == 'true' }}
+      run: |
+        set -e
+        echo "Installing Mono dependencies..."
+        sudo apt-get update
+        sudo apt-get install -y mono-complete msbuild
+      shell: bash
+
+    - name: 🦄⚡️ Build the Unicorn! ⚡️🦄
+      run: |
+        set -e
+        mkdir -p "${{ inputs.export_path }}"
+        EXPORT_FULL_PATH="${{ inputs.export_path }}/${{ inputs.export_file }}"
+        echo "Exporting to: $EXPORT_FULL_PATH"
+        "${{ inputs.godot_executable }}" --headless --path "${{ inputs.project_path }}" --export-release "${{ inputs.export_target }}" "$EXPORT_FULL_PATH"
+      shell: bash

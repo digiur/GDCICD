@@ -1,23 +1,31 @@
-name: GD-CICD Actions - Build and Publish Godot Project
+name: GD-CICD Actions - Godot Build and Publish to itch.io
+run-name: 🚀 ${{ github.actor }} is publishing to itch.io! 🦄
+
+# This simple workflow demonstrates how to use the GD-CICD actions to build a Godot project and publish it to Itch.io.
+
+# It uses the `digiur/GDCICD` actions to fetch the Godot engine, build the project, and publish it to Itch.io using Butler.
+# A single HTML5 export preset named "web" is expected to be defined in your Godot project.
+# Make sure to set your Itch.io API key in the GitHub Secrets as `ITCHIO_API_KEY`.
+# and change the `itchio_target` to your Itch.io user and project name.
+
 on:
   workflow_dispatch:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+
     steps:
+      # Checkout the repository (Github provides this action)
       - uses: actions/checkout@v4
 
       # Download Godot engine
-      - uses: ./fetch-engine
-
-      # OR Build Godot from source
-      # - uses: ./build-engine
+      - uses: digiur/GDCICD/actions/fetch-engine@main
 
       # Build project
-      - uses: ./build-project
+      - uses: digiur/GDCICD/actions/build-project@main
 
       # Publish to Itch.io
-      - uses: ./publish-itchio
+      - uses: digiur/GDCICD/actions/publish-itchio@main
         with:
           # Replace with your Itch.io user and project name
           itchio_target: "ICHIO_USER/ICHIO_PROJECT:web"

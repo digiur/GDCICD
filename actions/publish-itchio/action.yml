@@ -5,13 +5,15 @@ inputs:
   butler_api_key:
     description: 'Itch.io Butler API key'
     # API key for authenticating with Butler/Itch.io
+    # Get it from https://itch.io/user/settings/api-keys
+    # WARNING! Use github secrets!
+    # Example: ${{ secrets.BUTLER_API_KEY }}
     required: true
 
   build_path:
     description: 'Path to exported build'
     # Path to the exported build directory
-    required: true
-    default: "builds/web"
+    default: "builds/web/"
 
   itchio_target:
     description: 'Itch.io target (user/game:channel)'
@@ -26,7 +28,7 @@ runs:
         set -e
         echo "build_path: ${{ inputs.build_path }}"
         echo "itchio_target: ${{ inputs.itchio_target }}"
-        echo "Contents of build_path:"
+        echo "Contents of ${{ inputs.build_path }}:"
         ls -lh "${{ inputs.build_path }}"
       shell: bash
 
@@ -57,17 +59,4 @@ runs:
         echo "Butler push finished with status $?"
       env:
         BUTLER_API_KEY: ${{ inputs.butler_api_key }}
-      shell: bash
-
-    - name: 🦚 Mission Debrief 🦚
-      run: |
-        set -e
-        echo "Butler push summary:"
-        if [ -f butler_output.json ]; then
-          cat butler_output.json | jq '.'
-        else
-          echo "No butler_output.json found. See previous logs for details."
-        fi
-        echo "Files in build_path after upload:"
-        ls -lh "${{ inputs.build_path }}"
       shell: bash
