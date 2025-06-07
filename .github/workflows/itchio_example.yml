@@ -1,0 +1,25 @@
+name: GD-CICD Actions - Build and Publish Godot Project
+on:
+  workflow_dispatch:
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Download Godot engine
+      - uses: ./fetch-engine
+
+      # OR Build Godot from source
+      # - uses: ./build-engine
+
+      # Build project
+      - uses: ./build-project
+
+      # Publish to Itch.io
+      - uses: ./publish-itchio
+        with:
+          # Replace with your Itch.io user and project name
+          itchio_target: "ICHIO_USER/ICHIO_PROJECT:web"
+          # Set your Itch.io API key in GitHub Secrets
+          butler_api_key: ${{ secrets.ITCHIO_API_KEY }}

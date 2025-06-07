@@ -1,0 +1,17 @@
+name: 'Godot Publish to Steam'
+description: 'Publishes exported build to Steam (requires SteamCMD and credentials)'
+inputs:
+  steam_credentials:
+    description: 'Steam credentials or token (TBD)'
+    required: false
+  build_path:
+    description: 'Path to exported build'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - run: |
+        echo "Stub: implement Steam Store upload here"
+        echo "${{ inputs.steam_credentials }}"
+        echo "${{ inputs.build_path }}"
+      shell: bash

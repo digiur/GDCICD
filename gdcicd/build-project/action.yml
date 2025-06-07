@@ -1,0 +1,62 @@
+name: 'Godot Build Project'
+description: 'Exports a Godot project for a given platform'
+
+inputs:
+  export_target:
+    description: 'Export preset name (e.g., web, windows, linux)'
+    # This should match the export preset name used in Godot
+    # For example, "web", "windows", "linux", etc.
+    required: true
+    default: "web"
+
+  export_path:
+    description: 'Output directory for exported game'
+    # This should match directory set in Godot export settings
+    # For example, "builds/web" for web exports, "builds/windows" for Windows, etc.
+    required: true
+    default: "builds/web"
+
+  godot_executable:
+    description: 'Path to Godot executable'
+    # Path to the Godot binary to use for export
+    required: true
+    default: "./GodotEngine"
+
+  project_path:
+    description: 'Path to the Godot project directory (default: .)'
+    # Path to the root of the Godot project
+    required: false
+    default: .
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🗒️ Build Manifest 🗒️
+      run: |
+        set -e
+        echo "export_target: ${{ inputs.export_target }}"
+        echo "export_path: ${{ inputs.export_path }}"
+        echo "godot_executable: ${{ inputs.godot_executable }}"
+        echo "project_path: ${{ inputs.project_path }}"
+        echo "Current directory contents:"
+        ls -lh
+      shell: bash
+
+    - name: 🦄 Summon the Build Unicorn 🦄
+      run: |
+        set -e
+        mkdir -p "${{ inputs.export_path }}"
+        echo "Starting Godot export..."
+        "${{ inputs.godot_executable }}" --headless --path "${{ inputs.project_path }}" --export-release "${{ inputs.export_target }}" "${{ inputs.export_path }}"
+        echo "Godot export finished with status $?"
+      shell: bash
+
+    - name: 🦅 Export Recap 🦅
+      run: |
+        set -e
+        echo "Exported files in ${ export_path }:"
+        ls -lh "${{ inputs.export_path }}"
+        echo "Largest exported file:"
+        ls -lhS "${{ inputs.export_path }}" | head -n 2
+        echo "Export step completed."
+      shell: bash

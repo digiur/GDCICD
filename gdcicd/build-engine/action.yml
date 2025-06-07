@@ -1,0 +1,72 @@
+name: 'Godot Build Engine from Source'
+description: 'Builds the Godot engine from source for specified tag'
+
+inputs:
+  godot_ref:
+    # Git reference or tag to checkout (e.g., "4.5-dev4", "Latest")
+    required: true
+    default: "Latest"
+
+  platform:
+    # Platform to build for (e.g., "linuxbsd", "windows", "macos")
+    required: true
+    default: "linuxbsd"
+
+  output_path:
+    description: 'Path and filename for the built Godot executable'
+    # Output path for the built Godot binary
+    required: true
+    default: "./GodotEngine"
+
+  scons_target:
+    description: 'SCons build target (e.g., "release", "release_debug")'
+    # Use "release" for production or "release_debug" for development
+    required: true
+    default: "release_debug"
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 📝 Source Checkout Manifest 📝
+      run: |
+        set -e
+        echo "godot_ref: ${{ inputs.godot_ref }}"
+        echo "platform: ${{ inputs.platform }}"
+        echo "output_path: ${{ inputs.output_path }}"
+        echo "scons_target: ${{ inputs.scons_target }}"
+      shell: bash
+
+    - name: 🦜 Clone Godot 🦜
+      run: |
+        set -e
+        git clone --depth 1 --branch "${{ inputs.godot_ref }}" https://github.com/godotengine/godot.git godot-source
+        echo "Cloned repository contents:"
+        ls -lh godot-source
+      shell: bash
+
+    - name: 🦅 Hatch a Build 🦅
+      run: |
+        set -e
+        cd godot-source
+        echo "Starting SCons build for platform: ${{ inputs.platform }} target: ${{ inputs.scons_target }}"
+        scons platform=${{ inputs.platform }} target=${{ inputs.scons_target }} -j$(nproc)
+        echo "Build output files:"
+        ls -lh bin/
+      shell: bash
+
+    - name: 🏗️ Assembling Workspace 🏗️
+      run: |
+        set -e
+        EXECUTABLE=$(ls godot-source/bin/godot.${{ inputs.platform }}.* | head -n1)
+        echo "Copying built binary: $EXECUTABLE -> ${{ inputs.output_path }}"
+        cp "$EXECUTABLE" "${{ inputs.output_path }}"
+      shell: bash
+
+    - name: 🦚 Build Results Recap 🦚
+      run: |
+        set -e
+        echo "Final built Godot binary:"
+        ls -lh "${{ inputs.output_path }}"
+        echo "SHA256 checksum:"
+        sha256sum "${{ inputs.output_path }}" || shasum -a 256 "${{ inputs.output_path }}" || echo "sha256sum not available"
+      shell: bash
