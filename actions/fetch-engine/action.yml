@@ -51,24 +51,49 @@ runs:
         fi
 
         echo "Using GitHub API endpoint: $GH_API"
+        HTTP_RESPONSE=$(curl -s -w "HTTPSTATUS:%{http_code}" "$GH_API")
+        HTTP_STATUS="${HTTP_RESPONSE##*HTTPSTATUS:}"
+        HTTP_BODY="${HTTP_RESPONSE%HTTPSTATUS:*}"
 
-        RELEASE_JSON=$(curl -s "$GH_API")
+        if [ "$HTTP_STATUS" -ne 200 ]; then
+          echo "❌ GitHub API returned an HTTP eroor status $HTTP_STATUS"
+          echo "Response:"
+          echo "$HTTP_BODY" | jq .
+          exit 1
+        fi
+
+        if ! echo "$HTTP_BODY" | jq -e . >/dev/null 2>&1; then
+          echo "❌ Response is not valid JSON:"
+          echo "$HTTP_BODY"
+          exit 1
+        fi
+
+        ERROR_MSG=$(echo "$HTTP_BODY" | jq -r .message)
+        if [ "$ERROR_MSG" != "null" ]; then
+          echo "❌ GitHub API error message: $ERROR_MSG"
+          echo "$HTTP_BODY" | jq .
+          exit 1
+        fi
+
+        RELEASE_JSON="$HTTP_BODY" # No errors! It is a release JSON!
+
+        # See https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release for example RELEASE_JSON
+
         TAG_NAME=$(echo "$RELEASE_JSON" | jq -r .tag_name)
+        echo "✅ Actual tag name: $TAG_NAME"
 
-        echo "Actual tag name: $TAG_NAME"
-
-        ENGINE_URLS=$(echo "$RELEASE_JSON" | jq -r ".assets[] | select(.name | test(\"${{ inputs.target_release_asset }}.zip$\") ) | .browser_download_url")
-        ENGINE_URL_COUNT=$(echo "$ENGINE_URLS" | grep -c . || true)
+        ENGINE_URLS=($(echo "$RELEASE_JSON" | jq -r --arg ast "${{ inputs.target_release_asset }}" '.assets[] | select(.name | test($ast + "\\.zip$")) | .browser_download_url'))
+        ENGINE_URL_COUNT=${#ENGINE_URLS[@]}
         if [ "$ENGINE_URL_COUNT" -eq 0 ]; then
           echo "❌ No asset found matching target_release_asset: '${{ inputs.target_release_asset }}'"
           exit 1
         elif [ "$ENGINE_URL_COUNT" -gt 1 ]; then
           echo "❌ More than one asset matched target_release_asset: '${{ inputs.target_release_asset }}'"
           echo "Matches:"
-          echo "$ENGINE_URLS"
+          printf '%s\n' "${ENGINE_URLS[@]}"
           exit 1
         fi
-        ENGINE_URL="$ENGINE_URLS"
+        ENGINE_URL="${ENGINE_URLS[0]}"
 
         TEMPLATES_URLS=($(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | test("export_templates.tpz$")) | .browser_download_url'))
         TEMPLATES_URL_COUNT=${#TEMPLATES_URLS[@]}
@@ -96,18 +121,26 @@ runs:
       run: |
         set -e
         echo "Downloading engine: $ENGINE_URL"
-        curl -L "$ENGINE_URL" -o godot.zip
+        curl -L --fail "$ENGINE_URL" -o godot.zip
         echo "Downloading export templates: $TEMPLATES_URL"
-        curl -L "$TEMPLATES_URL" -o templates.tpz
+        curl -L --fail "$TEMPLATES_URL" -o templates.tpz
       shell: bash
 
     - name: 🪄 Extract Engine and Templates 🪄
       run: |
         set -e
-        unzip -j godot.zip -d .
-        unzip templates.tpz -d .
+        unzip -j -q godot.zip -d .
+        unzip -q templates.tpz -d . # this archive has a root templates/ directory
+
+        # Godot expects 3.6.1-stable → 3.6.1.stable for the templates directory name
         TEMPLATES_DIR=$(echo "$TAG_NAME" | sed 's/-/./g')
-        EXECUTABLE=$(ls Godot*${{ inputs.target_release_asset }}* | head -n1)
+        EXECUTABLE=$(find . -maxdepth 1 -type f -name "Godot*${{ inputs.target_release_asset }}*" | head -n1)
+
+        if [ -z "$EXECUTABLE" ]; then
+          echo "❌ Could not find extracted Godot executable matching 'Godot*${{ inputs.target_release_asset }}*'"
+          exit 1
+        fi
+
         mv "$EXECUTABLE" "${{ inputs.output_path }}"
 
         echo "Engine binary moved to ${{ inputs.output_path }}"
