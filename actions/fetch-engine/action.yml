@@ -44,10 +44,10 @@ runs:
         set -e
         if [ "${{ inputs.godot_release_tag }}" = "latest" ]; then
           echo "Fetching latest release..."
-          GH_API="https://api.github.com/repos/godotengine/godot-builds/releases/latest"
+          GH_API="https://api.github.com/repos/godotengine/godot/releases/latest"
         else
           echo "Fetching release by tag: ${{ inputs.godot_release_tag }}"
-          GH_API="https://api.github.com/repos/godotengine/godot-builds/releases/tags/${{ inputs.godot_release_tag }}"
+          GH_API="https://api.github.com/repos/godotengine/godot/releases/tags/${{ inputs.godot_release_tag }}"
         fi
 
         echo "Using GitHub API endpoint: $GH_API"
