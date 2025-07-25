@@ -61,7 +61,7 @@ runs:
         sudo apt-get install -y mono-complete msbuild
       shell: bash
 
-    - name: 🦄⚡️ Build the Unicorn! ⚡️🦄
+    - name: 🦄⚡️ Build the Project! ⚡️🦄
       run: |
         set -e
         mkdir -p "${{ inputs.export_path }}"
