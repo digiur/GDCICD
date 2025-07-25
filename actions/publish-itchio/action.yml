@@ -35,7 +35,7 @@ runs:
     - name: 🛰️ Downloading butler... 🛰️
       run: |
         set -e
-        curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+        wget -O butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
         echo "Butler downloaded. File details:"
         ls -lh butler.zip
       shell: bash
