@@ -1,7 +1,5 @@
 # Godot CI/CD GitHub Actions
 
-### Simple, opinionated, concise, declarative CICD actions for use with godot projects.
-
 ## Under Construction
 
 - This project is under active early development and subject to change. Thanks to github's versioning pinned versions of actions are immutable, but may become unsupported quickly.
