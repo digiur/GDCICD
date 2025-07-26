@@ -2,40 +2,40 @@ name: 'Godot Build Project'
 description: 'Exports a Godot project for a given platform'
 
 inputs:
+  # This should match the export preset name used in the Godot project
+  # For example, "web", "windows", "linux", etc.
   export_target:
     description: 'Export preset name (e.g., web, windows, linux)'
-    # This should match the export preset name used in the Godot project
-    # For example, "web", "windows", "linux", etc.
     default: "web"
 
+  # This should be the directory where the exported game will be saved
+  # this OVERRIDES the default export path in the export preset
   export_path:
     description: 'Output directory for exported game'
-    # This should be the directory where the exported game will be saved
-    # this OVERRIDES the default export path in the export preset
     default: "builds/web"
 
+  # This should be the filename for the exported game
+  # This OVERRIDES the default export filename in the export preset
   export_file:
     description: 'Output filename for exported game'
-    # This should be the filename for the exported game
-    # This OVERRIDES the default export filename in the export preset
     default: "index.html"
 
+  # Path to the Godot binary to use to export a project build
+  # Leave this default if using the Godot engine downloaded or built
+  # by the digiur `fetch-engine` or `build-engine` actions
   godot_executable:
     description: 'Path to Godot executable'
-    # Path to the Godot binary to use to export a project build
-    # Leave this default if using the Godot engine downloaded
-    # by the digiur `fetch-engine` or `build-engine` actions
     default: "./GodotEngine"
 
+  # Path to the root of the Godot project
+  # (where the project.godot file is located)
   project_path:
-    description: 'Path to the Godot project directory (default: .)'
-    # Path to the root of the Godot project
-    # (where the project.godot file is located)
+    description: 'Path to the Godot project directory'
     default: .
 
+  # Set to 'true' if the project uses Mono (C#) and requires Mono to be installed
   uses_mono:
     description: 'Whether the project uses Mono (C#)'
-    # Set to 'true' if the project uses Mono (C#) and requires Mono to be installed
     default: "false"
 
 runs:

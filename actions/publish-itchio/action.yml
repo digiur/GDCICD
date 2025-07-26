@@ -2,23 +2,24 @@ name: 'Godot Publish to Itch.io'
 description: 'Publishes exported build to Itch.io using Butler'
 
 inputs:
-  butler_api_key:
+  # API key for authenticating with Butler/Itch.io
+  # Get it from https://itch.io/user/settings/api-keys
+  # WARNING! Use github secrets!
+  # More info here: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets
+  # Example: ${{ secrets.ITCHIO_API_KEY }}
+  api_key:
     description: 'Itch.io Butler API key'
-    # API key for authenticating with Butler/Itch.io
-    # Get it from https://itch.io/user/settings/api-keys
-    # WARNING! Use github secrets!
-    # Example: ${{ secrets.BUTLER_API_KEY }}
     required: true
 
-  build_path:
-    description: 'Path to exported build'
-    # Path to the exported build directory
-    default: "builds/web/"
-
+  # Target in the format user/game:channel for Itch.io
   itchio_target:
     description: 'Itch.io target (user/game:channel)'
-    # Target in the format user/game:channel for Itch.io
     required: true
+
+  # Path to the exported build directory
+  build_path:
+    description: 'Path to exported build'
+    default: "builds/web/"
 
 runs:
   using: 'composite'
@@ -61,5 +62,5 @@ runs:
         cat butler_output.json | jq '.'
         echo "Butler push finished with status $?"
       env:
-        BUTLER_API_KEY: ${{ inputs.butler_api_key }}
+        BUTLER_API_KEY: ${{ inputs.api_key }}
       shell: bash

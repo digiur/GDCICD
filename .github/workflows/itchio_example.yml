@@ -1,45 +1,60 @@
-name: GD-CICD Actions - Godot Build and Publish to itch.io
+name: GDCICD Actions - Godot Build and Publish to itch.io
 run-name: 🚀 ${{ github.actor }} is publishing to itch.io! 🦄
 
-# This simple workflow demonstrates how to use the GD-CICD actions to build a Godot project and publish it to Itch.io.
+# This simple workflow demonstrates how to build
+# a Godot project and publish it to Itch.io.
 
-# It uses the `digiur/GDCICD` actions to fetch the Godot engine, build the project, and publish it to Itch.io using Butler.
-# A single HTML5 export preset named "web" is expected to be defined in your Godot project.
-# Make sure to set your Itch.io API key in the GitHub Secrets as `ITCHIO_API_KEY`.
-# and change the `itchio_target` to your Itch.io user and project name.
+# It `uses:` the `digiur/GDCICD` actions to fetch the Godot engine,
+# build the project, and publish it to Itch.io using Butler.
+
+# Most example `with:` inputs used in this workflow
+# are actually the defaults for those inputs and can be
+# omitted if the defaults are suitable.
 
 on:
   workflow_dispatch:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-
     steps:
       # Checkout the repository (Github provides this action)
       - uses: actions/checkout@v4
 
       # Download Godot engine
-      - uses: digiur/GDCICD/actions/fetch-engine@v0.1
+      - uses: digiur/GDCICD/actions/fetch-engine@v0.8
         with:
+
           # Replace with the Godot release tag you want to use
-          godot_release_tag: "latest"
-          # Specify the target release asset, e.g., "stable_linux.x86_64" for Linux
-          target_release_asset: "stable_linux.x86_64"
+          godot_release_tag: latest
+
+          # Specify the target release asset
+          # e.g., "stable_linux.x86_64" for Linux
+          target_release_asset: stable_linux.x86_64
 
       # Build project
-      - uses: digiur/GDCICD/actions/build-project@v0.1
+      - uses: digiur/GDCICD/actions/build-project@v0.8
         with:
+
           # Export preset name defined in your Godot project
-          export_target: "web"
+          export_target: web
+
           # Output directory for the exported game
-          export_path: "builds/web"
+          export_path: builds/web
+
           # Output filename for the exported game
-          export_file: "index.html"
+          export_file: index.html
 
       # Publish to Itch.io
-      - uses: digiur/GDCICD/actions/publish-itchio@v0.1
+      - uses: digiur/GDCICD/actions/publish-itchio@v0.8
         with:
+
+          # This should match the export_path used in the build step
+          build_path: builds/web/
+
           # Replace with your Itch.io user and project name
-          itchio_target: "ICHIO_USER/ICHIO_PROJECT:web"
+          # This input is required and has no default
+          itchio_target: <ICHIO_USER>/<ICHIO_PROJECT>:web
+
           # Set your Itch.io API key in GitHub Secrets
-          butler_api_key: ${{ secrets.ITCHIO_API_KEY }}
+          # This input is required and has no default
+          api_key: ${{ secrets.ITCHIO_API_KEY }}

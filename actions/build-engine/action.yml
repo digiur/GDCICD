@@ -1,6 +1,6 @@
 name: 'Godot Build Engine from Source'
-description: 'Builds the Godot engine and export templates from source for specified tag'
-
+description: 'Builds the Godot engine and export templates from source for specified tag WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK'
+# WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK
 inputs:
   godot_ref:
     description: 'Git ref, branch, or tag to checkout (e.g., "4.5-dev4", "master")'
@@ -29,25 +29,31 @@ runs:
     - name: 📝 Source Checkout Manifest 📝
       run: |
         set -e
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
         echo "godot_ref: ${{ inputs.godot_ref }}"
         echo "output_path: ${{ inputs.output_path }}"
         echo "build_debug_templates: ${{ inputs.build_debug_templates }}"
         echo "build_release_templates: ${{ inputs.build_release_templates }}"
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
       shell: bash
 
     - name: 🦉 Install SCons 🦉
       run: |
         set -e
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
         sudo apt-get update
         sudo apt-get install -y scons
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
       shell: bash
 
     - name: 🦜 Clone Godot 🦜
       run: |
         set -e
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
         git clone --depth 1 --branch "${{ inputs.godot_ref }}" https://github.com/godotengine/godot.git godot-source
         echo "Cloned repository contents:"
         ls -lh godot-source
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
       shell: bash
 
     - name: 📦 SCons Cache 📦
@@ -61,6 +67,7 @@ runs:
 
     - name: 🦅 Build Editor and Export Templates 🦅
       run: |
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
         set -e
         cd godot-source
 
@@ -79,11 +86,13 @@ runs:
 
         echo "Build output files:"
         ls -lh bin/
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
       shell: bash
 
     - name: 🏗️ Assembling Workspace 🏗️
       run: |
         set -e
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
 
         EDITOR_BIN=$(ls godot-source/bin/godot.linuxbsd.* | grep -v template | head -n1)
         echo "Copying built editor binary: $EDITOR_BIN -> ${{ inputs.output_path }}"
@@ -117,10 +126,12 @@ runs:
 
         echo "Export templates copied to $TEMPLATES_DIR"
         ls -lh "$TEMPLATES_DIR"
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
       shell: bash
 
     - name: 🦚 Build Results Recap 🦚
       run: |
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
         set -e
         echo "Final built Godot editor binary:"
         ls -lh "${{ inputs.output_path }}"
@@ -132,4 +143,5 @@ runs:
 
         echo "SHA256 checksum:"
         sha256sum "${{ inputs.output_path }}" || shasum -a 256 "${{ inputs.output_path }}" || echo "sha256sum not available"
+        echo "WARNING: THIS ACTION IS EXPERIMENTAL AND PROBABLY WILL NOT WORK"
       shell: bash
