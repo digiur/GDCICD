@@ -30,19 +30,22 @@ runs:
         echo "itchio_target: ${{ inputs.itchio_target }}"
         echo "Contents of ${{ inputs.build_path }}:"
         ls -lh "${{ inputs.build_path }}"
+        if [ -f "./butler" ]; then
+          echo "butler is already installed"
+          echo "SKIP_DOWNLOAD=true" >> $GITHUB_ENV
+        else
+          echo "butler is not installed"
+          echo "SKIP_DOWNLOAD=false" >> $GITHUB_ENV
+        fi
       shell: bash
 
-    - name: 🛰️ Downloading butler... 🛰️
+    - name: 🛰️ Downloading butler... 📡
+      if: env.skip_download == 'false'
       run: |
         set -e
         wget -O butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
         echo "Butler downloaded. File details:"
         ls -lh butler.zip
-      shell: bash
-
-    - name: 📡 Unpacking and Verifying Butler 📡
-      run: |
-        set -e
         unzip butler.zip
         chmod +x butler
         echo "Butler version:"
