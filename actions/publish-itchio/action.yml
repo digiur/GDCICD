@@ -40,7 +40,7 @@ runs:
       shell: bash
 
     - name: 🛰️ Downloading butler... 📡
-      if: env.skip_download == 'false'
+      if: env.SKIP_DOWNLOAD == 'false'
       run: |
         set -e
         wget -O butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
