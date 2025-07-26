@@ -2,7 +2,7 @@
 
 ## Under Construction
 
-- This project is under active early development and subject to change. Thanks to github's versioning pinned versions of actions are immutable, but may become unsupported quickly.
+- This project is under active early development and subject to change. Thanks to github's action versioning with tags, pinned versions of actions will not change, but may become unsupported quickly.
 
 ## 🚀 Quickest Start ⚡️
 
