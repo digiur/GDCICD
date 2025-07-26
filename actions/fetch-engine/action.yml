@@ -51,21 +51,11 @@ runs:
         fi
 
         echo "Using GitHub API endpoint: $GH_API"
-        
-        # Use wget to download API response - headers to stderr, body to stdout
-        TEMP_HEADERS=$(mktemp)
-        if ! HTTP_BODY=$(wget --server-response -qO- "$GH_API" 2>"$TEMP_HEADERS"); then
-          echo "❌ Failed to fetch from GitHub API"
-          cat "$TEMP_HEADERS"
-          rm -f "$TEMP_HEADERS"
-          exit 1
-        fi
-        
-        # Extract HTTP status from headers
-        HTTP_STATUS=$(grep -E "HTTP/[0-9.]+ [0-9]+" "$TEMP_HEADERS" | tail -1 | awk '{print $2}')
-        rm -f "$TEMP_HEADERS"
-        
-        if [ -z "$HTTP_STATUS" ] || [ "$HTTP_STATUS" -ne 200 ]; then
+        HTTP_RESPONSE=$(curl -s -w "HTTPSTATUS:%{http_code}" "$GH_API")
+        HTTP_STATUS="${HTTP_RESPONSE##*HTTPSTATUS:}"
+        HTTP_BODY="${HTTP_RESPONSE%HTTPSTATUS:*}"
+
+        if [ "$HTTP_STATUS" -ne 200 ]; then
           echo "❌ GitHub API returned an HTTP eroor status $HTTP_STATUS"
           echo "Response:"
           echo "$HTTP_BODY" | jq .
