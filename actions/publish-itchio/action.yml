@@ -9,28 +9,138 @@ inputs:
   # Example: ${{ secrets.ITCHIO_API_KEY }}
   api_key:
     description: 'Itch.io Butler API key'
-    required: true
+    required: false
 
   # Target in the format user/game:channel for Itch.io
   itchio_target:
     description: 'Itch.io target (user/game:channel)'
-    required: true
+    required: false
 
   # Path to the exported build directory
   build_path:
     description: 'Path to exported build'
     default: "builds/web/"
 
+  # Working directory to look for .env files
+  working_directory:
+    description: 'Working directory to search for .env files'
+    default: "."
+
 runs:
   using: 'composite'
   steps:
+    - name: 📋 Load Environment Variables 📋
+      run: |
+        set -e
+        
+        # Initialize variables with empty values
+        FINAL_API_KEY=""
+        FINAL_ITCHIO_TARGET=""
+        FINAL_BUILD_PATH="${{ inputs.build_path }}"
+        
+        # Track sources for reporting
+        API_KEY_SOURCE="default"
+        ITCHIO_TARGET_SOURCE="default"
+        BUILD_PATH_SOURCE="action input (default)"
+        
+        # Step 1: Load root .env file if it exists
+        if [ -f ".env" ]; then
+          echo "Found root .env file, loading variables..."
+          # Read .env file line by line (handles files without final newline)
+          while IFS='=' read -r key value || [ -n "$key" ]; do
+            # Skip comments and empty lines
+            [[ $key =~ ^[[:space:]]*# ]] && continue
+            [[ -z $key ]] && continue
+            # Remove quotes and export
+            value=$(echo "$value" | sed 's/^["'"'"']\(.*\)["'"'"']$/\1/')
+            case $key in
+              "API_KEY"|"ITCHIO_API_KEY")
+                FINAL_API_KEY="$value"
+                API_KEY_SOURCE="root .env file"
+                ;;
+              "ITCHIO_TARGET")
+                FINAL_ITCHIO_TARGET="$value"
+                ITCHIO_TARGET_SOURCE="root .env file"
+                ;;
+              "BUILD_PATH")
+                FINAL_BUILD_PATH="$value"
+                BUILD_PATH_SOURCE="root .env file"
+                ;;
+            esac
+          done < .env
+        fi
+        
+        # Step 2: Load working directory .env file if it exists and is different from root
+        if [ -f "${{ inputs.working_directory }}/.env" ] && [ "${{ inputs.working_directory }}" != "." ]; then
+          echo "Found working directory .env file, loading variables (will override root values)..."
+          while IFS='=' read -r key value || [ -n "$key" ]; do
+            # Skip comments and empty lines
+            [[ $key =~ ^[[:space:]]*# ]] && continue
+            [[ -z $key ]] && continue
+            # Remove quotes and export
+            value=$(echo "$value" | sed 's/^["'"'"']\(.*\)["'"'"']$/\1/')
+            case $key in
+              "API_KEY"|"ITCHIO_API_KEY")
+                FINAL_API_KEY="$value"
+                API_KEY_SOURCE="working directory .env file"
+                ;;
+              "ITCHIO_TARGET")
+                FINAL_ITCHIO_TARGET="$value"
+                ITCHIO_TARGET_SOURCE="working directory .env file"
+                ;;
+              "BUILD_PATH")
+                FINAL_BUILD_PATH="$value"
+                BUILD_PATH_SOURCE="working directory .env file"
+                ;;
+            esac
+          done < "${{ inputs.working_directory }}/.env"
+        fi
+        
+        # Step 3: Apply direct action inputs (highest priority)
+        if [ -n "${{ inputs.api_key }}" ]; then
+          FINAL_API_KEY="${{ inputs.api_key }}"
+          API_KEY_SOURCE="action input"
+        fi
+        
+        if [ -n "${{ inputs.itchio_target }}" ]; then
+          FINAL_ITCHIO_TARGET="${{ inputs.itchio_target }}"
+          ITCHIO_TARGET_SOURCE="action input"
+        fi
+        
+        # Export final values to GITHUB_ENV for use in subsequent steps
+        echo "FINAL_API_KEY=$FINAL_API_KEY" >> $GITHUB_ENV
+        echo "FINAL_ITCHIO_TARGET=$FINAL_ITCHIO_TARGET" >> $GITHUB_ENV
+        echo "FINAL_BUILD_PATH=$FINAL_BUILD_PATH" >> $GITHUB_ENV
+        echo "API_KEY_SOURCE=$API_KEY_SOURCE" >> $GITHUB_ENV
+        echo "ITCHIO_TARGET_SOURCE=$ITCHIO_TARGET_SOURCE" >> $GITHUB_ENV
+        echo "BUILD_PATH_SOURCE=$BUILD_PATH_SOURCE" >> $GITHUB_ENV
+        
+        echo "Environment variables loaded successfully!"
+      shell: bash
+
     - name: 🧾 Preflight Checklist 🧾
       run: |
         set -e
-        echo "build_path: ${{ inputs.build_path }}"
-        echo "itchio_target: ${{ inputs.itchio_target }}"
-        echo "Contents of ${{ inputs.build_path }}:"
-        ls -lh "${{ inputs.build_path }}"
+        echo "=== Final Configuration ==="
+        echo "build_path: $FINAL_BUILD_PATH (source: $BUILD_PATH_SOURCE)"
+        echo "itchio_target: $FINAL_ITCHIO_TARGET (source: $ITCHIO_TARGET_SOURCE)"
+        echo "api_key: [REDACTED] (source: $API_KEY_SOURCE)"
+        echo ""
+        echo "=== Validation ==="
+        
+        # Check required values
+        if [ -z "$FINAL_API_KEY" ]; then
+          echo "ERROR: API key is required but not provided via .env file or action input"
+          exit 1
+        fi
+        
+        if [ -z "$FINAL_ITCHIO_TARGET" ]; then
+          echo "ERROR: Itchio target is required but not provided via .env file or action input"
+          exit 1
+        fi
+        
+        echo "Contents of $FINAL_BUILD_PATH:"
+        ls -lh "$FINAL_BUILD_PATH"
         if [ -f "./butler" ]; then
           echo "butler is already installed"
           echo "SKIP_DOWNLOAD=true" >> $GITHUB_ENV
@@ -57,10 +167,10 @@ runs:
       run: |
         set -e
         echo "Pushing to Itch.io with Butler..."
-        ./butler push "${{ inputs.build_path }}" "${{ inputs.itchio_target }}" --json > butler_output.json
+        ./butler push "$FINAL_BUILD_PATH" "$FINAL_ITCHIO_TARGET" --json > butler_output.json
         echo "Butler push output (summary):"
         cat butler_output.json | jq '.'
         echo "Butler push finished with status $?"
       env:
-        BUTLER_API_KEY: ${{ inputs.api_key }}
+        BUTLER_API_KEY: ${{ env.FINAL_API_KEY }}
       shell: bash

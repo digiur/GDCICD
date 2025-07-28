@@ -28,6 +28,30 @@ jobs:
 #### 1. Add a file `.github/workflows/gdcicd.yml` to your github repo and put this snippit into it
 
 - See `.github/workflows/itchio_example.yml` and the individual `action.yml` files in `./actions` for more detailed information about actions and inputs.
+- **NEW!** See `.github/workflows/itchio_example_env.yml` for an example using `.env` files for configuration.
+
+#### 1b. Alternative: Use .env files for configuration (NEW!)
+
+Instead of hardcoding values in your workflow, you can create a `.env` file in your repository root:
+
+```bash
+# .env file in repository root
+ITCHIO_TARGET=your_username/your_game:web
+BUILD_PATH=builds/web/
+```
+
+Then your workflow becomes simpler:
+
+```yaml
+- uses: digiur/GDCICD/actions/publish-itchio@v0.8
+  with:
+    api_key: ${{ secrets.ITCHIO_API_KEY }}
+    # Everything else comes from .env file!
+```
+
+- Copy `.env.example` to `.env` and customize for your project
+- Supports priority: root `.env` → working directory `.env` → direct inputs
+- See `.github/workflows/itchio_example_env.yml` for a complete example
 
 #### 2. Change `<ICHIO_USER>/<ICHIO_PROJECT>` to your itchio username and project name
 
