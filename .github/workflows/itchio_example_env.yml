@@ -1,0 +1,46 @@
+name: GDCICD Actions - Godot Build and Publish to itch.io (Using .env files)
+run-name: 🚀 ${{ github.actor }} is publishing to itch.io using .env configuration! 🦄
+
+# This workflow demonstrates how to use .env files for configuration
+# instead of hardcoding values in the workflow file.
+
+# Create a .env file in your repository root with:
+# ITCHIO_TARGET=your_username/your_game:web
+# BUILD_PATH=builds/web/
+# 
+# And set ITCHIO_API_KEY in GitHub Secrets as usual.
+
+on:
+  workflow_dispatch:
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository (Github provides this action)
+      - uses: actions/checkout@v4
+
+      # Download Godot engine
+      - uses: digiur/GDCICD/actions/fetch-engine@v0.8
+        with:
+          godot_release_tag: latest
+          target_release_asset: stable_linux.x86_64
+
+      # Build project
+      - uses: digiur/GDCICD/actions/build-project@v0.8
+        with:
+          export_target: web
+          export_path: builds/web
+          export_file: index.html
+
+      # Publish to Itch.io - now reads .env files!
+      - uses: digiur/GDCICD/actions/publish-itchio@v0.8
+        with:
+          # Only the API key is needed - everything else can come from .env
+          api_key: ${{ secrets.ITCHIO_API_KEY }}
+          
+          # Optional: specify a different working directory for .env files
+          # working_directory: ./game_config
+          
+          # Optional: override specific values from .env
+          # itchio_target: override_user/override_game:web
+          # build_path: builds/override/
