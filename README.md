@@ -53,6 +53,41 @@ jobs:
 
 ## 🧙‍♂️ Upgrade Options! 🦄
 
+### Use .env Files for Configuration
+
+The `publish-itchio` action now supports reading configuration from `.env` files! This makes it easier to manage settings across different environments.
+
+Create a `.env` file in your repository root:
+
+```bash
+# .env
+API_KEY=your-itch-io-api-key-here
+ITCHIO_TARGET=myuser/my-awesome-game:web
+BUILD_PATH=builds/web/
+```
+
+Then use the action with minimal configuration:
+
+```yaml
+- uses: digiur/GDCICD/actions/publish-itchio@v0.8
+  with:
+    # Only provide sensitive data via GitHub Secrets
+    api_key: ${{ secrets.ITCHIO_API_KEY }}
+    # All other values come from .env file automatically
+```
+
+**Configuration Precedence:**
+1. **Root .env file** - Base configuration
+2. **Working directory .env** - Override with `working_directory: subproject`
+3. **Direct inputs** - Final override (highest priority)
+
+**Supported .env variables:**
+- `API_KEY` or `BUTLER_API_KEY` → api_key input
+- `ITCHIO_TARGET` → itchio_target input
+- `BUILD_PATH` → build_path input
+
+See `.env.example` and `.github/workflows/itchio_env_example.yml` for complete examples.
+
 ### Run automatically
 
 - Replace

@@ -9,28 +9,144 @@ inputs:
   # Example: ${{ secrets.ITCHIO_API_KEY }}
   api_key:
     description: 'Itch.io Butler API key'
-    required: true
+    required: false
 
   # Target in the format user/game:channel for Itch.io
   itchio_target:
     description: 'Itch.io target (user/game:channel)'
-    required: true
+    required: false
 
   # Path to the exported build directory
   build_path:
     description: 'Path to exported build'
     default: "builds/web/"
 
+  # Working directory for .env file lookup
+  working_directory:
+    description: 'Working directory to look for .env files'
+    default: "."
+
 runs:
   using: 'composite'
   steps:
+    - name: ⚙️ Load Configuration ⚙️
+      run: |
+        set -e
+        
+        # Initialize variables to track sources
+        API_KEY_SOURCE="not set"
+        ITCHIO_TARGET_SOURCE="not set"
+        BUILD_PATH_SOURCE="not set"
+        
+        # Set defaults
+        FINAL_BUILD_PATH="${{ inputs.build_path }}"
+        BUILD_PATH_SOURCE="default"
+        
+        # Function to parse .env file
+        parse_env_file() {
+          local env_file="$1"
+          local source_name="$2"
+          
+          if [ -f "$env_file" ]; then
+            echo "Reading .env file: $env_file"
+            while IFS= read -r line || [ -n "$line" ]; do
+              # Skip comments and empty lines
+              if [[ "$line" =~ ^[[:space:]]*# ]] || [[ -z "${line// }" ]]; then
+                continue
+              fi
+              
+              # Parse KEY=VALUE format
+              if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*)[[:space:]]*$ ]]; then
+                key="${BASH_REMATCH[1]}"
+                value="${BASH_REMATCH[2]}"
+                
+                # Remove quotes if present
+                if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+                  value="${BASH_REMATCH[1]}"
+                fi
+                
+                case "$key" in
+                  "BUTLER_API_KEY"|"API_KEY")
+                    if [ -n "$value" ]; then
+                      FINAL_API_KEY="$value"
+                      API_KEY_SOURCE="$source_name"
+                    fi
+                    ;;
+                  "ITCHIO_TARGET")
+                    if [ -n "$value" ]; then
+                      FINAL_ITCHIO_TARGET="$value"
+                      ITCHIO_TARGET_SOURCE="$source_name"
+                    fi
+                    ;;
+                  "BUILD_PATH")
+                    if [ -n "$value" ]; then
+                      FINAL_BUILD_PATH="$value"
+                      BUILD_PATH_SOURCE="$source_name"
+                    fi
+                    ;;
+                esac
+              fi
+            done < "$env_file"
+          fi
+        }
+        
+        # Read root .env file first
+        parse_env_file ".env" "root .env"
+        
+        # Read working directory .env file (if different from root)
+        if [ "${{ inputs.working_directory }}" != "." ]; then
+          parse_env_file "${{ inputs.working_directory }}/.env" "working directory .env"
+        fi
+        
+        # Direct inputs override everything
+        if [ -n "${{ inputs.api_key }}" ]; then
+          FINAL_API_KEY="${{ inputs.api_key }}"
+          API_KEY_SOURCE="direct input"
+        fi
+        
+        if [ -n "${{ inputs.itchio_target }}" ]; then
+          FINAL_ITCHIO_TARGET="${{ inputs.itchio_target }}"
+          ITCHIO_TARGET_SOURCE="direct input"
+        fi
+        
+        if [ "${{ inputs.build_path }}" != "builds/web/" ]; then
+          FINAL_BUILD_PATH="${{ inputs.build_path }}"
+          BUILD_PATH_SOURCE="direct input"
+        fi
+        
+        # Validate required values
+        if [ -z "$FINAL_API_KEY" ]; then
+          echo "ERROR: api_key is required but not provided in .env files or direct input"
+          exit 1
+        fi
+        
+        if [ -z "$FINAL_ITCHIO_TARGET" ]; then
+          echo "ERROR: itchio_target is required but not provided in .env files or direct input"
+          exit 1
+        fi
+        
+        # Set environment variables for subsequent steps
+        echo "FINAL_API_KEY=$FINAL_API_KEY" >> $GITHUB_ENV
+        echo "FINAL_ITCHIO_TARGET=$FINAL_ITCHIO_TARGET" >> $GITHUB_ENV
+        echo "FINAL_BUILD_PATH=$FINAL_BUILD_PATH" >> $GITHUB_ENV
+        echo "API_KEY_SOURCE=$API_KEY_SOURCE" >> $GITHUB_ENV
+        echo "ITCHIO_TARGET_SOURCE=$ITCHIO_TARGET_SOURCE" >> $GITHUB_ENV
+        echo "BUILD_PATH_SOURCE=$BUILD_PATH_SOURCE" >> $GITHUB_ENV
+        
+        echo "Configuration loaded successfully"
+      shell: bash
+
     - name: 🧾 Preflight Checklist 🧾
       run: |
         set -e
-        echo "build_path: ${{ inputs.build_path }}"
-        echo "itchio_target: ${{ inputs.itchio_target }}"
-        echo "Contents of ${{ inputs.build_path }}:"
-        ls -lh "${{ inputs.build_path }}"
+        echo "=== Configuration Values ==="
+        echo "build_path: ${{ env.FINAL_BUILD_PATH }} (source: ${{ env.BUILD_PATH_SOURCE }})"
+        echo "itchio_target: ${{ env.FINAL_ITCHIO_TARGET }} (source: ${{ env.ITCHIO_TARGET_SOURCE }})"
+        echo "api_key: [HIDDEN] (source: ${{ env.API_KEY_SOURCE }})"
+        echo "working_directory: ${{ inputs.working_directory }}"
+        echo ""
+        echo "Contents of ${{ env.FINAL_BUILD_PATH }}:"
+        ls -lh "${{ env.FINAL_BUILD_PATH }}"
         if [ -f "./butler" ]; then
           echo "butler is already installed"
           echo "SKIP_DOWNLOAD=true" >> $GITHUB_ENV
@@ -57,10 +173,10 @@ runs:
       run: |
         set -e
         echo "Pushing to Itch.io with Butler..."
-        ./butler push "${{ inputs.build_path }}" "${{ inputs.itchio_target }}" --json > butler_output.json
+        ./butler push "${{ env.FINAL_BUILD_PATH }}" "${{ env.FINAL_ITCHIO_TARGET }}" --json > butler_output.json
         echo "Butler push output (summary):"
         cat butler_output.json | jq '.'
         echo "Butler push finished with status $?"
       env:
-        BUTLER_API_KEY: ${{ inputs.api_key }}
+        BUTLER_API_KEY: ${{ env.FINAL_API_KEY }}
       shell: bash
