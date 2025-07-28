@@ -9,28 +9,149 @@ inputs:
   # Example: ${{ secrets.ITCHIO_API_KEY }}
   api_key:
     description: 'Itch.io Butler API key'
-    required: true
+    required: false
 
   # Target in the format user/game:channel for Itch.io
   itchio_target:
     description: 'Itch.io target (user/game:channel)'
-    required: true
+    required: false
 
   # Path to the exported build directory
   build_path:
     description: 'Path to exported build'
     default: "builds/web/"
 
+  # Working directory to look for .env files
+  working_directory:
+    description: 'Working directory to look for .env files'
+    default: "."
+
 runs:
   using: 'composite'
   steps:
+    - name: 🔧 Load Environment Configuration 🔧
+      run: |
+        set -e
+
+        # Initialize default values
+        FINAL_API_KEY=""
+        FINAL_ITCHIO_TARGET=""
+        FINAL_BUILD_PATH=""
+
+        # Track sources for reporting
+        API_KEY_SOURCE="default"
+        ITCHIO_TARGET_SOURCE="default"
+        BUILD_PATH_SOURCE="default"
+
+        echo "=== Loading configuration from multiple sources ==="
+
+        # 1. Load from root .env file if it exists
+        if [ -f ".env" ]; then
+          echo "Found root .env file, loading..."
+          while IFS='=' read -r key value; do
+            # Skip comments and empty lines
+            [[ $key =~ ^#.*$ ]] && continue
+            [[ -z $key ]] && continue
+            # Remove quotes from value if present
+            value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/")
+            case $key in
+              "ITCHIO_API_KEY")
+                FINAL_API_KEY="$value"
+                API_KEY_SOURCE="root .env"
+                ;;
+              "ITCHIO_TARGET")
+                FINAL_ITCHIO_TARGET="$value"
+                ITCHIO_TARGET_SOURCE="root .env"
+                ;;
+              "BUILD_PATH")
+                FINAL_BUILD_PATH="$value"
+                BUILD_PATH_SOURCE="root .env"
+                ;;
+            esac
+          done < .env
+        else
+          echo "No root .env file found"
+        fi
+
+        # 2. Load from working directory .env file if it exists (allows override)
+        if [ -f "${{ inputs.working_directory }}/.env" ] && [ "${{ inputs.working_directory }}/.env" != "./.env" ]; then
+          echo "Found working directory .env file at ${{ inputs.working_directory }}/.env, loading..."
+          while IFS='=' read -r key value; do
+            # Skip comments and empty lines
+            [[ $key =~ ^#.*$ ]] && continue
+            [[ -z $key ]] && continue
+            # Remove quotes from value if present
+            value=$(echo "$value" | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/")
+            case $key in
+              "ITCHIO_API_KEY")
+                FINAL_API_KEY="$value"
+                API_KEY_SOURCE="working directory .env"
+                ;;
+              "ITCHIO_TARGET")
+                FINAL_ITCHIO_TARGET="$value"
+                ITCHIO_TARGET_SOURCE="working directory .env"
+                ;;
+              "BUILD_PATH")
+                FINAL_BUILD_PATH="$value"
+                BUILD_PATH_SOURCE="working directory .env"
+                ;;
+            esac
+          done < "${{ inputs.working_directory }}/.env"
+        else
+          echo "No working directory .env file found at ${{ inputs.working_directory }}/.env"
+        fi
+
+        # 3. Apply direct inputs as final overrides
+        if [ -n "${{ inputs.api_key }}" ]; then
+          FINAL_API_KEY="${{ inputs.api_key }}"
+          API_KEY_SOURCE="direct input"
+        fi
+        if [ -n "${{ inputs.itchio_target }}" ]; then
+          FINAL_ITCHIO_TARGET="${{ inputs.itchio_target }}"
+          ITCHIO_TARGET_SOURCE="direct input"
+        fi
+        if [ -n "${{ inputs.build_path }}" ]; then
+          FINAL_BUILD_PATH="${{ inputs.build_path }}"
+          BUILD_PATH_SOURCE="direct input"
+        fi
+
+        # Set environment variables for subsequent steps
+        # Apply defaults if values are still empty
+        if [ -z "$FINAL_API_KEY" ]; then
+          API_KEY_SOURCE="default (empty)"
+        fi
+        if [ -z "$FINAL_ITCHIO_TARGET" ]; then
+          ITCHIO_TARGET_SOURCE="default (empty)"
+        fi
+        if [ -z "$FINAL_BUILD_PATH" ]; then
+          FINAL_BUILD_PATH="builds/web/"
+          BUILD_PATH_SOURCE="default"
+        fi
+        
+        echo "FINAL_API_KEY=$FINAL_API_KEY" >> $GITHUB_ENV
+        echo "FINAL_ITCHIO_TARGET=$FINAL_ITCHIO_TARGET" >> $GITHUB_ENV
+        echo "FINAL_BUILD_PATH=$FINAL_BUILD_PATH" >> $GITHUB_ENV
+        echo "API_KEY_SOURCE=$API_KEY_SOURCE" >> $GITHUB_ENV
+        echo "ITCHIO_TARGET_SOURCE=$ITCHIO_TARGET_SOURCE" >> $GITHUB_ENV
+        echo "BUILD_PATH_SOURCE=$BUILD_PATH_SOURCE" >> $GITHUB_ENV
+
+        echo "=== Configuration loading complete ==="
+      shell: bash
+
     - name: 🧾 Preflight Checklist 🧾
       run: |
         set -e
-        echo "build_path: ${{ inputs.build_path }}"
-        echo "itchio_target: ${{ inputs.itchio_target }}"
-        echo "Contents of ${{ inputs.build_path }}:"
-        ls -lh "${{ inputs.build_path }}"
+        echo "=== Final Configuration Values and Sources ==="
+        echo "build_path: $FINAL_BUILD_PATH (source: $BUILD_PATH_SOURCE)"
+        echo "itchio_target: $FINAL_ITCHIO_TARGET (source: $ITCHIO_TARGET_SOURCE)"
+        echo "api_key: [HIDDEN] (source: $API_KEY_SOURCE)"
+        echo "working_directory: ${{ inputs.working_directory }}"
+        echo ""
+        echo "=== Build Directory Contents ==="
+        echo "Contents of $FINAL_BUILD_PATH:"
+        ls -lh "$FINAL_BUILD_PATH"
+        echo ""
+        echo "=== Butler Installation Check ==="
         if [ -f "./butler" ]; then
           echo "butler is already installed"
           echo "SKIP_DOWNLOAD=true" >> $GITHUB_ENV
@@ -57,10 +178,10 @@ runs:
       run: |
         set -e
         echo "Pushing to Itch.io with Butler..."
-        ./butler push "${{ inputs.build_path }}" "${{ inputs.itchio_target }}" --json > butler_output.json
+        ./butler push "$FINAL_BUILD_PATH" "$FINAL_ITCHIO_TARGET" --json > butler_output.json
         echo "Butler push output (summary):"
         cat butler_output.json | jq '.'
         echo "Butler push finished with status $?"
       env:
-        BUTLER_API_KEY: ${{ inputs.api_key }}
+        BUTLER_API_KEY: ${{ env.FINAL_API_KEY }}
       shell: bash
