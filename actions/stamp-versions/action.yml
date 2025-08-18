@@ -21,20 +21,65 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: 📋 Check Inputs 📋
+      run: |
+        echo "Checking version inputs..."
+
+        HAS_INPUT=false
+        if [ -n "${{ inputs.project-version }}" ]; then
+          echo "✅ project-version: ${{ inputs.project-version }}"
+          HAS_INPUT=true
+        fi
+
+        if [ -n "${{ inputs.file-version }}" ]; then
+          echo "✅ file-version: ${{ inputs.file-version }}"
+          HAS_INPUT=true
+        fi
+
+        if [ -n "${{ inputs.product-version }}" ]; then
+          echo "✅ product-version: ${{ inputs.product-version }}"
+          HAS_INPUT=true
+        fi
+
+        if [ "$HAS_INPUT" = "false" ]; then
+          echo "⚠️ No version inputs provided!"
+          echo ""
+          echo "To use this action, provide at least one of these inputs:"
+          echo "  - project-version: Version for project.godot (config/version)"
+          echo "  - file-version: File version for export_presets.cfg (application/file_version)"
+          echo "  - product-version: Product version for export_presets.cfg (application/product_version)"
+          echo ""
+          echo "Example usage:"
+          echo "  - uses: digiur/GDCICD/actions/stamp-versions@v0.10"
+          echo "    with:"
+          echo "      project-version: '1.2.3'"
+          echo "      file-version: '1.2.3.0'"
+          echo "      product-version: '1.2.3.0'"
+          echo ""
+          echo "No files will be modified."
+        fi
+      shell: bash
+
     - name: Update project version
       if: ${{ inputs.project-version != '' }}
       run: |
+        set -e
         echo "Stamping version ${{ inputs.project-version }} in project.godot"
         sed -i.bak-project-version "/^config\\/version=/s/=.*/=\"${{ inputs.project-version }}\"/" "${{ inputs.project-file }}"
-        
+      shell: bash
+
     - name: Update file version
       if: ${{ inputs.file-version != '' }}
       run: |
+        set -e
         echo "Stamping file version ${{ inputs.file-version }} into export_presets.cfg"
         sed -i.bak-file-version "/^application\\/file_version=/s/=.*/=\"${{ inputs.file-version }}\"/" "${{ inputs.export-presets-file }}"
-        
+      shell: bash
+
     - name: Update product version
       if: ${{ inputs.product-version != '' }}
       run: |
+        set -e
         echo "Stamping product version ${{ inputs.product-version }} into export_presets.cfg"
         sed -i.bak-product-version "/^application\\/product_version=/s/=.*/=\"${{ inputs.product-version }}\"/" "${{ inputs.export-presets-file }}"
+      shell: bash
