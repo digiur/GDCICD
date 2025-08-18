@@ -6,7 +6,7 @@
 
 # 🚀 Quickest Start ⚡️
 
-### Minimum possible workflow that fetches the engine, builds a project, and publishes to Itch.io
+**Minimum possible workflow that fetches the engine, builds a project, and publishes to Itch.io**
 
 ```yaml
 name: Godot Build and Publish to Itch.io
