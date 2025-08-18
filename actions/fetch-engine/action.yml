@@ -50,7 +50,7 @@ runs:
           GH_API="https://api.github.com/repos/godotengine/godot/releases/tags/${{ inputs.godot_release_tag }}"
         fi
 
-        echo "Using GitHub API endpoint: $GH_API"
+        echo "Using GitHub API endpoint: $GH_API"url
         HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" "$GH_API")
         HTTP_BODY=$(echo "$HTTP_RESPONSE" | head -n -1)
         HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n 1)
@@ -75,8 +75,7 @@ runs:
           exit 1
         fi
 
-        # See https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release for example RELEASE_JSON
-        RELEASE_JSON="$HTTP_BODY" # No errors! It is a release JSON!
+        RELEASE_JSON=$(echo "$HTTP_BODY" | jq -c .)
         TAG_NAME=$(echo "$RELEASE_JSON" | jq -r .tag_name)
         echo "✅ Found release: $TAG_NAME"
 
