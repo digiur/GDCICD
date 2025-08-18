@@ -25,11 +25,17 @@ jobs:
           butler_api_key: ${{ secrets.ITCHIO_API_KEY }}
 ```
 
-### 1. Add a file `.github/workflows/gdcicd.yml` to your github repo and put the above snippit into it
+### 1. Define an HTML5 export preset named "web" in your project
+
+- In the editor go to **project > export**
+- Create a new HTML5 export named "web"
+- More info [here](https://docs.godotengine.org/en/latest/tutorials/export/exporting_for_web.html)
+
+### 2. Add a file `.github/workflows/gdcicd.yml` to your github repo and put the above snippit into it
 
 - See `.github/workflows/itchio_example.yml` and the individual `action.yml` files in `./actions` for more detailed information about actions and inputs
 
-### 2. Change `<ICHIO_USER>/<ICHIO_PROJECT>` to your itchio username and project name
+### 3. Change `<ICHIO_USER>/<ICHIO_PROJECT>` to your itchio username and project name
 
 These can easily be found in the URL of your game's itch.io page.
 
@@ -37,14 +43,14 @@ These can easily be found in the URL of your game's itch.io page.
 - You would use: `digiur/my-game-project:web`
 - More info on itch.io's butler [here](https://itch.io/docs/butler/pushing.html)
 
-### 3. Add Your Itch.io API Key
+### 4. Add Your Itch.io API Key
 
 - Go to your repo’s **Settings > Secrets and variables > Actions > New repository secret**
 - Name it: `ITCHIO_API_KEY`
 - Paste your [Itch.io API key](https://itch.io/user/settings/api-keys)
 - More info on github secrets [here](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
 
-### 4. Run the action!
+### 5. Run the action!
 
 - Go to your repo's Actions tab and select your new "Godot Build and Publish to Itch.io" action in the left column
 - You should see a message "This workflow has a `workflow_dispatch` event trigger." and a "Run Workflow" button to run the workflow
