@@ -57,6 +57,7 @@ runs:
           echo "      product-version: '1.2.3.0'"
           echo ""
           echo "No files will be modified."
+          exit 1
         fi
       shell: bash
 
