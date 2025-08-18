@@ -78,7 +78,7 @@ on:
 
 ## Automatic Versioning
 
-**The stamp-version action will edit your project.godot file to add a semantic version to the build**
+**The stamp-version action will edit your project.godot file to add a version to the build**
 
 ```yaml
 - uses: digiur/GDCICD/actions/stamp-version@v0.16
@@ -90,7 +90,7 @@ This version number is available to gdscript at run time so you can display `Ver
 
 ### GitVersion
 
-GitVersion is a tool to determine what version number a build should be. It can be combined with the `stamp-version` action to automatically increment the version numbers of your build.
+GitVersion is a tool to generate semantic version number a build should be. It can be combined with the `stamp-version` action to automatically increment the version numbers of your build.
 
 ```yaml
 steps:
