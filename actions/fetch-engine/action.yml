@@ -30,7 +30,7 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 📋 Inputds 📋
+    - name: 📋 Inputs 📋
       run: |
         set -e
         echo "godot_release_tag: ${{ inputs.godot_release_tag }}"
@@ -39,7 +39,7 @@ runs:
         echo "use_mono_templates: ${{ inputs.use_mono_templates }}"
       shell: bash
 
-    - name: 🛰️ Find Godot Release 🛰️
+    - name: 🛰️ Fetch Godot Release Data 🛰️
       run: |
         set -e
         if [ "${{ inputs.godot_release_tag }}" = "latest" ]; then
@@ -51,12 +51,12 @@ runs:
         fi
 
         echo "Using GitHub API endpoint: $GH_API"
-        HTTP_RESPONSE=$(curl -s -w "HTTPSTATUS:%{http_code}" "$GH_API")
-        HTTP_STATUS="${HTTP_RESPONSE##*HTTPSTATUS:}"
-        HTTP_BODY="${HTTP_RESPONSE%HTTPSTATUS:*}"
+        HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" "$GH_API")
+        HTTP_BODY=$(echo "$HTTP_RESPONSE" | head -n -1)
+        HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tail -n 1)
 
         if [ "$HTTP_STATUS" -ne 200 ]; then
-          echo "❌ GitHub API returned an HTTP eroor status $HTTP_STATUS"
+          echo "❌ GitHub API returned an HTTP error status $HTTP_STATUS"
           echo "Response:"
           echo "$HTTP_BODY" | jq .
           exit 1
@@ -75,46 +75,77 @@ runs:
           exit 1
         fi
 
-        RELEASE_JSON="$HTTP_BODY" # No errors! It is a release JSON!
-
         # See https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release for example RELEASE_JSON
-
+        RELEASE_JSON="$HTTP_BODY" # No errors! It is a release JSON!
         TAG_NAME=$(echo "$RELEASE_JSON" | jq -r .tag_name)
-        echo "✅ Actual tag name: $TAG_NAME"
+        echo "✅ Found release: $TAG_NAME"
 
-        ENGINE_URLS=($(echo "$RELEASE_JSON" | jq -r --arg ast "${{ inputs.target_release_asset }}" '.assets[] | select(.name | test($ast + "\\.zip$")) | .browser_download_url'))
-        ENGINE_URL_COUNT=${#ENGINE_URLS[@]}
+        echo "RELEASE_JSON=$RELEASE_JSON" >> $GITHUB_ENV
+        echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+      shell: bash
+
+    - name: 🎯 Find Engine Asset 🎯
+      run: |
+        set -e
+        echo "Looking for engine asset matching: ${{ inputs.target_release_asset }}"
+
+        ENGINE_URL_COUNT=$(echo "$RELEASE_JSON" | jq -r --arg ast "${{ inputs.target_release_asset }}" '[.assets[] | select(.name | test($ast + "\\.zip$"))] | length')
+
         if [ "$ENGINE_URL_COUNT" -eq 0 ]; then
           echo "❌ No asset found matching target_release_asset: '${{ inputs.target_release_asset }}'"
+          echo "Available engine assets:"
+          echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | endswith(".zip")) | .name'
           exit 1
         elif [ "$ENGINE_URL_COUNT" -gt 1 ]; then
           echo "❌ More than one asset matched target_release_asset: '${{ inputs.target_release_asset }}'"
           echo "Matches:"
-          printf '%s\n' "${ENGINE_URLS[@]}"
+          echo "$RELEASE_JSON" | jq -r --arg ast "${{ inputs.target_release_asset }}" '.assets[] | select(.name | test($ast + "\\.zip$")) | .name'
           exit 1
         fi
-        ENGINE_URL="${ENGINE_URLS[0]}"
 
-        TEMPLATES_URLS=($(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | test("export_templates.tpz$")) | .browser_download_url'))
-        TEMPLATES_URL_COUNT=${#TEMPLATES_URLS[@]}
-        if [ "$TEMPLATES_URL_COUNT" -ne 2 ]; then
-          echo "❌ Expected exactly 2 export templates assets (standard and mono), but found $TEMPLATES_URL_COUNT:"
-          printf '%s\n' "${TEMPLATES_URLS[@]}"
+        ENGINE_URL=$(echo "$RELEASE_JSON" | jq -r --arg ast "${{ inputs.target_release_asset }}" '.assets[] | select(.name | test($ast + "\\.zip$")) | .browser_download_url')
+        echo "✅ Found engine URL: $ENGINE_URL"
+        echo "ENGINE_URL=$ENGINE_URL" >> $GITHUB_ENV
+      shell: bash
+
+    - name: 📦 Find Templates Asset 📦
+      run: |
+        set -e
+        if [ "${{ inputs.use_mono_templates }}" = "true" ]; then
+          echo "Looking for mono export templates..."
+          TEMPLATES_COUNT=$(echo "$RELEASE_JSON" | jq -r '[.assets[] | select(.name | contains("mono") and endswith("export_templates.tpz"))] | length')
+          EXPECTED_TYPE="mono"
+        else
+          echo "Looking for standard export templates..."
+          TEMPLATES_COUNT=$(echo "$RELEASE_JSON" | jq -r '[.assets[] | select(.name | endswith("export_templates.tpz") and (contains("mono") | not))] | length')
+          EXPECTED_TYPE="standard"
+        fi
+
+        if [ "$TEMPLATES_COUNT" -eq 0 ]; then
+          echo "❌ No $EXPECTED_TYPE export templates found"
+          echo "Available template assets:"
+          echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | endswith("export_templates.tpz")) | .name'
+          exit 1
+        elif [ "$TEMPLATES_COUNT" -gt 1 ]; then
+          echo "❌ Multiple $EXPECTED_TYPE export templates found"
+          echo "Matches:"
+          if [ "${{ inputs.use_mono_templates }}" = "true" ]; then
+            echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | contains("mono") and endswith("export_templates.tpz")) | .name'
+          else
+            echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | endswith("export_templates.tpz") and (contains("mono") | not)) | .name'
+          fi
           exit 1
         fi
 
         if [ "${{ inputs.use_mono_templates }}" = "true" ]; then
-          TEMPLATES_URL="${TEMPLATES_URLS[1]}"
+          TEMPLATES_URL=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | contains("mono") and endswith("export_templates.tpz")) | .browser_download_url')
         else
-          TEMPLATES_URL="${TEMPLATES_URLS[0]}"
+          TEMPLATES_URL=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | endswith("export_templates.tpz") and (contains("mono") | not)) | .browser_download_url')
         fi
 
-        echo "Found engine URL: $ENGINE_URL"
-        echo "Selected export templates URL: $TEMPLATES_URL"
+        echo "✅ Found templates URL: $TEMPLATES_URL"
 
-        echo "ENGINE_URL=$ENGINE_URL" >> $GITHUB_ENV
         echo "TEMPLATES_URL=$TEMPLATES_URL" >> $GITHUB_ENV
-        echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
       shell: bash
 
     - name: 📡 Download Engine and Templates 📡
@@ -130,7 +161,9 @@ runs:
       run: |
         set -e
         unzip -j -q godot.zip -d .
-        unzip -q templates.tpz -d . # this archive has a root templates/ directory
+
+        # Templates archive should contain a 'templates/' directory
+        unzip -q templates.tpz -d .
 
         # Godot expects 3.6.1-stable → 3.6.1.stable for the templates directory name
         TEMPLATES_DIR=$(echo "$TAG_NAME" | sed 's/-/./g')
@@ -146,8 +179,13 @@ runs:
         echo "Engine binary moved to ${{ inputs.output_path }}"
 
         mkdir -p ~/.local/share/godot/export_templates/"$TEMPLATES_DIR"
-        mv templates/* ~/.local/share/godot/export_templates/"$TEMPLATES_DIR"/
 
-        echo "Export templates installed to: ~/.local/share/godot/export_templates/$TEMPLATES_DIR"
-        ls -lh ~/.local/share/godot/export_templates/"$TEMPLATES_DIR"
+        if [ -d "templates" ]; then
+          mv templates/* ~/.local/share/godot/export_templates/"$TEMPLATES_DIR"/
+          echo "Export templates installed to: ~/.local/share/godot/export_templates/$TEMPLATES_DIR"
+          ls -lh ~/.local/share/godot/export_templates/"$TEMPLATES_DIR"
+        else
+          echo "❌ Templates directory not found after extraction"
+          exit 1
+        fi
       shell: bash

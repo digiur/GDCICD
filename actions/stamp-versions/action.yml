@@ -1,0 +1,40 @@
+name: 'Update Godot Project Versions'
+description: 'Updates version information in Godot project files'
+inputs:
+  project-version:
+    description: 'Version to set in project.godot (config/version)'
+
+  file-version:
+    description: 'File version to set in export_presets.cfg (application/file_version)'
+
+  product-version:
+    description: 'Product version to set in export_presets.cfg (application/product_version)'
+
+  project-file:
+    description: 'Path to project.godot file'
+    default: './project.godot'
+
+  export-presets-file:
+    description: 'Path to export_presets.cfg file'
+    default: './export_presets.cfg'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Update project version
+      if: ${{ inputs.project-version != '' }}
+      run: |
+        echo "Stamping version ${{ inputs.project-version }} in project.godot"
+        sed -i.bak-project-version "/^config\\/version=/s/=.*/=\"${{ inputs.project-version }}\"/" "${{ inputs.project-file }}"
+        
+    - name: Update file version
+      if: ${{ inputs.file-version != '' }}
+      run: |
+        echo "Stamping file version ${{ inputs.file-version }} into export_presets.cfg"
+        sed -i.bak-file-version "/^application\\/file_version=/s/=.*/=\"${{ inputs.file-version }}\"/" "${{ inputs.export-presets-file }}"
+        
+    - name: Update product version
+      if: ${{ inputs.product-version != '' }}
+      run: |
+        echo "Stamping product version ${{ inputs.product-version }} into export_presets.cfg"
+        sed -i.bak-product-version "/^application\\/product_version=/s/=.*/=\"${{ inputs.product-version }}\"/" "${{ inputs.export-presets-file }}"
