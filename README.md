@@ -2,9 +2,9 @@
 
 ## Under Construction
 
-- This project is under active early development and subject to change. Thanks to github's action versioning with tags, pinned versions of actions will not change, but may become unsupported quickly.
+- This project is under active early development and subject to change. Thanks to github's action versioning with tags, pinned versions of actions will not change, but may become unsupported quickly
 
-## 🚀 Quickest Start ⚡️
+# 🚀 Quickest Start ⚡️
 
 ### Minimum possible workflow that fetches the engine, builds a project, and publishes to Itch.io
 
@@ -17,32 +17,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: digiur/GDCICD/actions/fetch-engine@v0.8
-      - uses: digiur/GDCICD/actions/build-project@v0.8
-      - uses: digiur/GDCICD/actions/publish-itchio@v0.8
+      - uses: digiur/GDCICD/actions/fetch-engine@v0.16
+      - uses: digiur/GDCICD/actions/build-project@v0.16
+      - uses: digiur/GDCICD/actions/publish-itchio@v0.16
         with:
           itchio_target: "<ICHIO_USER>/<ICHIO_PROJECT>:web"
           butler_api_key: ${{ secrets.ITCHIO_API_KEY }}
 ```
 
-#### 1. Add a file `.github/workflows/gdcicd.yml` to your github repo and put this snippit into it
+### 1. Add a file `.github/workflows/gdcicd.yml` to your github repo and put the above snippit into it
 
-- See `.github/workflows/itchio_example.yml` and the individual `action.yml` files in `./actions` for more detailed information about actions and inputs.
+- See `.github/workflows/itchio_example.yml` and the individual `action.yml` files in `./actions` for more detailed information about actions and inputs
 
-#### 2. Change `<ICHIO_USER>/<ICHIO_PROJECT>` to your itchio username and project name
+### 2. Change `<ICHIO_USER>/<ICHIO_PROJECT>` to your itchio username and project name
 
-- For example: `https://digiur.itch.io/my-game-project`
-- Use: `digiur/my-game-project:web`
+These can easily be found in the URL of your game's itch.io page.
+
+- For this URL: `https://digiur.itch.io/my-game-project`
+- You would use: `digiur/my-game-project:web`
 - More info on itch.io's butler [here](https://itch.io/docs/butler/pushing.html)
 
-#### 3. Add Your Itch.io API Key
+### 3. Add Your Itch.io API Key
 
-- Go to your repo’s Settings > Secrets and variables > Actions > New repository secret
+- Go to your repo’s **Settings > Secrets and variables > Actions > New repository secret**
 - Name it: `ITCHIO_API_KEY`
 - Paste your [Itch.io API key](https://itch.io/user/settings/api-keys)
 - More info on github secrets [here](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
 
-#### 4. Run the action!
+### 4. Run the action!
 
 - Go to your repo's Actions tab and select your new "Godot Build and Publish to Itch.io" action in the left column
 - You should see a message "This workflow has a `workflow_dispatch` event trigger." and a "Run Workflow" button to run the workflow
@@ -50,19 +52,20 @@ jobs:
 ### 🛠️ Your project will build and deploy to itchio! 🪄
 
 - Any errors or warnings will be printed to the action's output with suggestions for fixes
+- Open an issue or start a discussion on this repo if you need help!
 
-## 🧙‍♂️ Upgrade Options! 🦄
+# 🧙‍♂️ Upgrade Options! 🦄
 
-### Run automatically
+## Run automatically
 
-- Replace
+**Replace**
 
 ```yaml
 on:
   workflow_dispatch:
 ```
 
-- With
+**With**
 
 ```yaml
 on:
@@ -71,9 +74,38 @@ on:
       - "main"
 ```
 
-- The workflow will run automatically on every push to main.
+- The workflow will run automatically on every push to main. (Or any other branches you choose!)
 
-### Save Build Artifacts to GitHub
+## Automatic Versioning
+
+**The stamp-version action will edit your project.godot file to add a semantic version to the build**
+
+```yaml
+- uses: digiur/GDCICD/actions/stamp-version@v0.16
+  with:
+    version: "1.2.3-153"
+```
+
+This version number is available to gdscript at run time so you can display `Version: 1.2.3-153` somewhere in-game.
+
+### GitVersion
+
+GitVersion is a tool to determine what version number a build should be. It can be combined with the `stamp-version` action to automatically increment the version numbers of your build.
+
+```yaml
+steps:
+  - uses: gittools/actions/gitversion/setup@v4.1.0 # install gitversion
+    with:
+      versionSpec: '6.3.x'
+
+- uses: gittools/actions/gitversion/execute@v4.1.0 # run gitversion
+
+  - uses: digiur/GDCICD/actions/stamp-version@v0.16
+    with:
+      version: ${{ env.commitDate }} # gitversion sets a number of env vars to chose from
+```
+
+## Save Build Artifacts to GitHub
 
 - The GitHub platform provaides an action for that! "upload-artifact"
 
@@ -98,9 +130,12 @@ on:
   - Use `path: .` + `include-hidden-files: true` to see a snapshot of your project's file system for your build before, after, or in-between steps!
   - Use `path: /` to see a snapshot of the entire build system's filesystem! (Could be Very big!)
 
+**The following example uploads 3 artifacts after_checkout, after_engine_fetch, and after_build. (This is for demonstration purposes, you probably don't want the first two artifacts in production...)**
+
 ```yaml
 steps:
   - uses: actions/checkout@v4
+
   - uses: actions/upload-artifact@v4
       with:
         name: after_checkout
@@ -109,7 +144,8 @@ steps:
         overwrite: true
         include-hidden-files: true
 
-  - uses: digiur/GDCICD/actions/fetch-engine@v0.8
+  - uses: digiur/GDCICD/actions/fetch-engine@v0.16
+
   - uses: actions/upload-artifact@v4
       with:
         name: after_engine_fetch
@@ -118,7 +154,8 @@ steps:
         overwrite: true
         include-hidden-files: true
 
-  - uses: digiur/GDCICD/actions/build-project@v0.8
+  - uses: digiur/GDCICD/actions/build-project@v0.16
+
   - uses: actions/upload-artifact@v4
       with:
         name: after_build

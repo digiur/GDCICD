@@ -19,7 +19,7 @@ inputs:
   # Path to the exported build directory
   build_path:
     description: 'Path to exported build'
-    default: "builds/web/"
+    default: "builds/web"
 
 runs:
   using: 'composite'

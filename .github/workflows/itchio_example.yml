@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # Download Godot engine
-      - uses: digiur/GDCICD/actions/fetch-engine@v0.15
+      - uses: digiur/GDCICD/actions/fetch-engine@v0.16
         with:
 
           # Replace with the Godot release tag you want to use
@@ -32,7 +32,7 @@ jobs:
           target_release_asset: stable_linux.x86_64
 
       # Build project
-      - uses: digiur/GDCICD/actions/build-project@v0.15
+      - uses: digiur/GDCICD/actions/build-project@v0.16
         with:
 
           # Export preset name defined in your Godot project
@@ -45,7 +45,7 @@ jobs:
           export_file: index.html
 
       # Publish to Itch.io
-      - uses: digiur/GDCICD/actions/publish-itchio@v0.15
+      - uses: digiur/GDCICD/actions/publish-itchio@v0.16
         with:
 
           # This should match the export_path used in the build step
