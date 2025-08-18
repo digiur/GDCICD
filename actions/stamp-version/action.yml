@@ -38,7 +38,7 @@ runs:
     - name: Show changes
       if: ${{ inputs.show-changes == 'true' }}
       run: |
-        echo "Backup file:"
+        echo "Original file:"
         cat "${{ inputs.project-file }}.bak"
         echo "Updated file:"
         cat "${{ inputs.project-file }}"
