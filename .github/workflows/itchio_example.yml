@@ -38,10 +38,10 @@ jobs:
           # Export preset name defined in your Godot project
           export_target: web
 
-          # Output directory for the exported game
+          # Output directory for the exported game (overrides the same setting in the project)
           export_path: builds/web
 
-          # Output filename for the exported game
+          # Output filename for the exported game (overrides the same setting in the project)
           export_file: index.html
 
       # Publish to Itch.io
@@ -49,7 +49,7 @@ jobs:
         with:
 
           # This should match the export_path used in the build step
-          build_path: builds/web/
+          build_path: builds/web
 
           # Replace with your Itch.io user and project name
           # This input is required and has no default
