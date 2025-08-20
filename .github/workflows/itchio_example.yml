@@ -17,6 +17,7 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
+
       # Checkout the repository (Github provides this action)
       - uses: actions/checkout@v4
 
@@ -25,10 +26,12 @@ jobs:
         with:
 
           # Replace with the Godot release tag you want to use
+          # https://github.com/godotengine/godot/tags
           godot_release_tag: latest
 
           # Specify the target release asset
           # e.g., "stable_linux.x86_64" for Linux
+          # https://github.com/godotengine/godot/releases
           target_release_asset: stable_linux.x86_64
 
       # Build project

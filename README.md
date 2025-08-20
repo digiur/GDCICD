@@ -1,10 +1,23 @@
-# Godot CI/CD GitHub Actions
+# 🧙‍♂️ Godot CI/CD GitHub Actions 🧙‍♂️
+
+## Things it can do now
+
+- Find, download, and install specific engine versions based on the official godot github repo's git tags
+- Export project to all platforms defined in project exports
+- Upload build artifacts to itch.io
+- Stamp version numbers into the project.godot file (this is then available to GD script)
+
+## Things it can do in the future
+
+- Upload to Steam
+- Compile the engine from source (C++ plugins/extensions or whatever else...)
+- Find, download, and install blender for blender imports
 
 ## Under Construction
 
 - This project is under active early development and subject to change. Thanks to github's action versioning with tags, pinned versions of actions will not change, but may become unsupported quickly
 
-# 🚀 Quickest Start ⚡️
+# 🚀 Quick Start 🚀
 
 **Minimum possible workflow that fetches the engine, builds a project, and publishes to Itch.io**
 
@@ -25,10 +38,10 @@ jobs:
           butler_api_key: ${{ secrets.ITCHIO_API_KEY }}
 ```
 
-### 1. Define an HTML5 export preset named "web" in your project
+### 1. Define an HTML5 export preset named 'web' in your project
 
 - In the editor go to **project > export**
-- Create a new HTML5 export named "web"
+- Create a new HTML5 export named 'web'
 - More info [here](https://docs.godotengine.org/en/latest/tutorials/export/exporting_for_web.html)
 
 ### 2. Add a file `.github/workflows/gdcicd.yml` to your github repo and put the above snippit into it
@@ -52,15 +65,15 @@ These can easily be found in the URL of your game's itch.io page.
 
 ### 5. Run the action!
 
-- Go to your repo's Actions tab and select your new "Godot Build and Publish to Itch.io" action in the left column
-- You should see a message "This workflow has a `workflow_dispatch` event trigger." and a "Run Workflow" button to run the workflow
+- Go to your repo's Actions tab and select your new 'Godot Build and Publish to Itch.io' action in the left column
+- You should see a message 'This workflow has a `workflow_dispatch` event trigger.' and a 'Run Workflow' button to run the workflow
 
-### 🛠️ Your project will build and deploy to itchio! 🪄
+### 🪄 Your project will build and deploy to itchio! 🪄
 
 - Any errors or warnings will be printed to the action's output with suggestions for fixes
 - Open an issue or start a discussion on this repo if you need help!
 
-# 🧙‍♂️ Upgrade Options! 🦄
+# 🦄 Upgrade Options! 🦄
 
 ## Run automatically
 
@@ -113,7 +126,7 @@ steps:
 
 ## Save Build Artifacts to GitHub
 
-- The GitHub platform provaides an action for that! "upload-artifact"
+- The GitHub platform provaides an action for that! 'upload-artifact'
 
 ```yaml
 - uses: actions/upload-artifact@v4
@@ -171,6 +184,6 @@ steps:
         include-hidden-files: true
 ```
 
-## 🛟 Need Help?
+## 🛟 Need Help? 🛟
 
 Open an issue or discussion in this repo!
