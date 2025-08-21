@@ -31,12 +31,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: digiur/GDCICD/actions/fetch-engine@v0.16
-      - uses: digiur/GDCICD/actions/build-project@v0.16
-      - uses: digiur/GDCICD/actions/publish-itchio@v0.16
+  - uses: digiur/GDCICD/actions/fetch-engine@v0.18
+  - uses: digiur/GDCICD/actions/build-project@v0.18
+  - uses: digiur/GDCICD/actions/publish-itchio@v0.18
         with:
           itchio_target: "<ICHIO_USER>/<ICHIO_PROJECT>:web"
-          butler_api_key: ${{ secrets.ITCHIO_API_KEY }}
+          api_key: ${{ secrets.ITCHIO_API_KEY }}
 ```
 
 ### 1. Define an HTML5 export preset named 'web' in your project
@@ -98,32 +98,76 @@ on:
 
 ## Automatic Versioning
 
-**The stamp-version action will edit your project.godot file to add a version to the build**
+**The edit-config action can edit any key in your project.godot file using section/key/value inputs.**
 
 ```yaml
-- uses: digiur/GDCICD/actions/stamp-version@v0.16
+- uses: digiur/GDCICD/actions/edit-config@v0.18
   with:
-    version: "1.2.3-153"
+    section: application
+    key: config/version
+    value: "1.2.3-153"
 ```
 
-This version number is available to gdscript at run time so you can display `Version: 1.2.3-153` somewhere in-game.
+This will set `config/version="1.2.3-153"` in your project.godot file. The version number is available to gdscript at run time so you can display `Version: 1.2.3-153` somewhere in-game.
 
 ### GitVersion
 
-[GitVersion](https://github.com/marketplace/actions/gittools) is a tool to generate semantic version number a build should be. It can be combined with the `stamp-version` action to automatically increment the version numbers of your build. It has many [outputs](https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute.md#outputs) to chose from.
+[GitVersion](https://github.com/marketplace/actions/gittools) is a tool to generate semantic version numbers for your build. It can be combined with the `edit-config` action to automatically increment the version numbers of your build. It has many [outputs](https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute.md#outputs) to choose from.
 
 ```yaml
 steps:
   - uses: gittools/actions/gitversion/setup@v4.1.0 # install gitversion
     with:
-      versionSpec: '6.3.x'
+      versionSpec: "6.3.x"
 
-- uses: gittools/actions/gitversion/execute@v4.1.0 # run gitversion
+  - uses: gittools/actions/gitversion/execute@v4.1.0 # run gitversion
 
-  - uses: digiur/GDCICD/actions/stamp-version@v0.16
+  - uses: digiur/GDCICD/actions/edit-config@v0.18
     with:
-      version: ${{ env.semVer }} # gitversion sets a number of env vars to chose from
+      section: application
+      key: config/version
+      value: ${{ env.semVer }} # gitversion sets a number of env vars to choose from
 ```
+
+## Exporting with Different Main Scenes for Different Platforms
+
+You can use the `edit-config` action to set a different main scene before each export. For example, to export a Windows build with one main scene and a Web build with another:
+
+```yaml
+jobs:
+  build-multi-platform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Set main scene for Windows export
+      - uses: digiur/GDCICD/actions/edit-config@v0.18
+        with:
+          section: application
+          key: run/main_scene
+          value: "res://windows_main.tscn"
+
+      - uses: digiur/GDCICD/actions/build-project@v0.18
+        with:
+          export_target: windows
+          export_path: builds/windows
+          export_file: game.exe
+
+      # Set main scene for Web export
+      - uses: digiur/GDCICD/actions/edit-config@v0.18
+        with:
+          section: application
+          key: run/main_scene
+          value: "res://web_main.tscn"
+
+      - uses: digiur/GDCICD/actions/build-project@v0.18
+        with:
+          export_target: web
+          export_path: builds/web
+          export_file: index.html
+```
+
+This will produce two builds, each with a different main scene.
 
 ## Save Build Artifacts to GitHub
 
@@ -164,7 +208,7 @@ steps:
         overwrite: true
         include-hidden-files: true
 
-  - uses: digiur/GDCICD/actions/fetch-engine@v0.16
+  - uses: digiur/GDCICD/actions/fetch-engine@v0.18
 
   - uses: actions/upload-artifact@v4
       with:
@@ -174,7 +218,7 @@ steps:
         overwrite: true
         include-hidden-files: true
 
-  - uses: digiur/GDCICD/actions/build-project@v0.16
+  - uses: digiur/GDCICD/actions/build-project@v0.18
 
   - uses: actions/upload-artifact@v4
       with:
