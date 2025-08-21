@@ -98,7 +98,7 @@ on:
 
 ## Automatic Versioning
 
-**The edit-config action can edit any key in your project.godot file using section/key/value inputs.**
+The edit-config action can edit any key in your project.godot file using section/key/value inputs.
 
 ```yaml
 - uses: digiur/GDCICD/actions/edit-config@v0.18
