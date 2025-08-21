@@ -167,8 +167,6 @@ jobs:
           export_file: index.html
 ```
 
-This will produce two builds, each with a different main scene.
-
 ## Save Build Artifacts to GitHub
 
 - The GitHub platform provaides an action for that! 'upload-artifact'
