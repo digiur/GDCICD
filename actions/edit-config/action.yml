@@ -1,0 +1,54 @@
+
+name: 'Edit project.godot File'
+description: 'Set configurations in project.godot files for dynamic main scenes, versioning, etc...'
+
+# Engine-provided configurations can be found here: https://docs.godotengine.org/en/stable/classes/class_projectsettings.html#class-projectsettings
+# Configs listed in that documentation are formatted like `section/key`
+# For `application/config/name` the section would be `application` and they key would be `config/name`
+
+inputs:
+  file:
+    description: 'Path to project.godot file'
+    default: './project.godot'
+
+  section:
+    description: 'Section in project.godot (e.g., application, rendering)'
+    required: true
+
+  key:
+    description: 'Key to set in the section (e.g., run/main_scene, config/name, boot_splash/bg_color)'
+    required: true
+
+  value:
+    description: 'Value to set for the key in project.godot'
+    required: true
+
+  show-changes:
+    description: 'Print .bak and updated file contents if true'
+    default: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Update project.godot file
+      run: |
+        set -e
+        file="${{ inputs.file }}"
+        section="${{ inputs.section }}"
+        key="${{ inputs.key }}"
+        value="${{ inputs.value }}"
+
+        echo "Updating [$section] $key=$value in $file"
+
+        cp "$file" "$file.bak"
+        crudini --set "$file" "$section" "$key" "$value"
+      shell: bash
+
+    - name: Show changes
+      if: ${{ inputs.show-changes == 'true' }}
+      run: |
+        echo "Original file:"
+        cat "${{ inputs.file }}.bak"
+        echo "Updated file:"
+        cat "${{ inputs.file }}"
+      shell: bash

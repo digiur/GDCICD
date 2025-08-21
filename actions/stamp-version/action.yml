@@ -1,12 +1,23 @@
-name: 'Update Godot Project Versions'
-description: 'Updates version information in Godot project files'
-inputs:
-  version:
-    description: 'Version to set in project.godot (config/version)'
 
-  project-file:
+name: 'Edit project.godot File'
+description: 'Set configurations in project.godot files for dynamic main scenes, versioning, etc...'
+inputs:
+  file:
+
     description: 'Path to project.godot file'
     default: './project.godot'
+
+  section:
+    description: 'Section in project.godot (e.g., application, rendering)'
+    required: true
+
+  key:
+    description: 'Key to set in the section (e.g., version, name, run/main_scene)'
+    required: true
+
+  value:
+    description: 'Value to set for the key in project.godot'
+    required: true
 
   show-changes:
     description: 'Print .bak and updated file contents if true'
@@ -15,31 +26,24 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Update project version
-      if: ${{ inputs.version != '' }}
+    - name: Update INI file with crudini
       run: |
         set -e
-        file="${{ inputs.project-file }}"
-        ver="${{ inputs.version }}"
-        echo "Stamping version $ver in $file"
-        
-        file="${{ inputs.project-file }}"
-        ver="${{ inputs.version }}"
-        key="config/version"
-        new_line="$key=\"$ver\""
+        file="${{ inputs.file }}"
+        section="${{ inputs.section }}"
+        key="${{ inputs.key }}"
+        value="${{ inputs.value }}"
 
-        if grep -q "^$key=" "$file"; then
-          sed -i.bak "s|^$key=.*|$new_line|" "$file"
-        else
-          sed -i.bak "/^config\/name=/a\\$new_line" "$file"
-        fi
+        echo "Updating [$section] $key=$value in $file"
+        cp "$file" "$file.bak"
+        crudini --set "$file" "$section" "$key" "$value"
       shell: bash
 
     - name: Show changes
       if: ${{ inputs.show-changes == 'true' }}
       run: |
         echo "Original file:"
-        cat "${{ inputs.project-file }}.bak"
+        cat "${{ inputs.file }}.bak"
         echo "Updated file:"
-        cat "${{ inputs.project-file }}"
+        cat "${{ inputs.file }}"
       shell: bash

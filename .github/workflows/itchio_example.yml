@@ -1,5 +1,5 @@
-name: GDCICD Actions - Godot Build and Publish to itch.io
-run-name: 🚀 ${{ github.actor }} is publishing to itch.io! 🦄
+name: Build and Publish to itch.io
+run-name: 🚀 ${{ github.actor }} is publishing to itch.io prod! 🦄
 
 # This simple workflow demonstrates how to build
 # a Godot project and publish it to Itch.io.

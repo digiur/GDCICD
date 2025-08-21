@@ -6,6 +6,7 @@
 - Export project to all platforms defined in project exports
 - Upload build artifacts to itch.io
 - Stamp version numbers into the project.godot file (this is then available to GD script)
+- Update the main scene configuration in project.godot files (Easily switch between different main scenes for win/linux/web or Change the splash screen! Custom configs too!)
 
 ## Things it can do in the future
 
@@ -109,7 +110,7 @@ This version number is available to gdscript at run time so you can display `Ver
 
 ### GitVersion
 
-GitVersion is a tool to generate semantic version number a build should be. It can be combined with the `stamp-version` action to automatically increment the version numbers of your build.
+[GitVersion](https://github.com/marketplace/actions/gittools) is a tool to generate semantic version number a build should be. It can be combined with the `stamp-version` action to automatically increment the version numbers of your build. It has many [outputs](https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute.md#outputs) to chose from.
 
 ```yaml
 steps:
@@ -121,7 +122,7 @@ steps:
 
   - uses: digiur/GDCICD/actions/stamp-version@v0.16
     with:
-      version: ${{ env.commitDate }} # gitversion sets a number of env vars to chose from
+      version: ${{ env.semVer }} # gitversion sets a number of env vars to chose from
 ```
 
 ## Save Build Artifacts to GitHub
