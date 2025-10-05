@@ -110,6 +110,10 @@ The `edit-config` action can edit any key in your project.godot file using secti
 
 This will set `config/version="1.2.3-153"` in your project.godot file. The version number is available to gdscript at run time so you can display `Version: 1.2.3-153` somewhere in-game.
 
+A full list of editable Engine-provided configurations can be found in the [godot docs](https://docs.godotengine.org/en/stable/classes/class_projectsettings.html#class-projectsettings)
+
+Configs listed there are formatted like `section/key/maybe/more/key`. Example: For `application/config/name` the section would be `application` and they key would be `config/name`
+
 ### GitVersion
 
 [GitVersion](https://github.com/marketplace/actions/gittools) is a tool to generate semantic version numbers for your build. It can be combined with the `edit-config` action to automatically increment the version numbers of your build. It has many [outputs](https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute.md#outputs) to choose from.
@@ -230,3 +234,4 @@ steps:
 ## 🛟 Need Help? 🛟
 
 Open an issue or discussion in this repo!
+
