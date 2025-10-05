@@ -1,4 +1,4 @@
-# 🧙‍♂️ Godot CI/CD GitHub Actions
+# Godot CI/CD GitHub Actions 🧙‍♂️
 
 ## Things it can do now
 
@@ -18,7 +18,7 @@
 
 - This project is under active early development and subject to change. Thanks to github's action versioning with tags, pinned versions of actions will not change, but may become unsupported quickly
 
-# 🚀 Quick Start
+# Quick Start 🚀
 
 **Minimum possible workflow that fetches the engine, builds a project, and publishes to Itch.io**
 
@@ -74,7 +74,7 @@ These can easily be found in the URL of your game's itch.io page.
 - Any errors or warnings will be printed to the action's output with suggestions for fixes
 - Open an issue or start a discussion on this repo if you need help!
 
-# 🦄 Upgrade Options!
+# Upgrade Options! 🦄
 
 ## Run automatically
 
@@ -122,7 +122,11 @@ This will set `config/version="1.2.3-153"` in your project.godot file. The versi
 
 ### GitVersion
 
-[GitVersion](https://github.com/marketplace/actions/gittools) is a tool to generate semantic version numbers for your build. It can be combined with the `edit-config` action to automatically increment the version numbers of your build. It has many [outputs](https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute.md#outputs) to choose from.
+[GitVersion](https://github.com/marketplace/actions/gittools) is a tool to generate semantic version numbers for your build.
+
+It can be combined with the `edit-config` action to automatically increment the version numbers of your build.
+
+It has many [outputs](https://github.com/GitTools/actions/blob/main/docs/examples/github/gitversion/execute.md#outputs) to choose from.
 
 ```yaml
 steps:
@@ -237,9 +241,6 @@ steps:
         include-hidden-files: true
 ```
 
-## 🛟 Need Help?
+## Need Help? 🛟
 
 Open an issue or discussion in this repo!
-
-
-
