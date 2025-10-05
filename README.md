@@ -96,9 +96,19 @@ on:
 
 - The workflow will run automatically on every push to main. (Or any other branches you choose!)
 
-## Automatic Versioning
+## Edit project.godot File
 
-The `edit-config` action can edit any key in your project.godot file using section/key/value inputs.
+ The `edit-config` action can edit any entry in your project.godot file using section/key/value inputs.
+ 
+ A full list of editable Engine-provided configurations can be found in the [godot docs](https://docs.godotengine.org/en/stable/classes/class_projectsettings.html#class-projectsettings)
+
+Configs listed there are formatted like `section/key/maybe/more/key`. Example: For `application/config/name` the section would be `application` and they key would be `config/name`.
+
+This can be useful for a variety of things including...
+
+### Automatic Versioning
+
+Use `edit-config` to edit the `config/version` entry in the project.godot config file:
 
 ```yaml
 - uses: digiur/GDCICD/actions/edit-config@v0.18
@@ -109,10 +119,6 @@ The `edit-config` action can edit any key in your project.godot file using secti
 ```
 
 This will set `config/version="1.2.3-153"` in your project.godot file. The version number is available to gdscript at run time so you can display `Version: 1.2.3-153` somewhere in-game.
-
-A full list of editable Engine-provided configurations can be found in the [godot docs](https://docs.godotengine.org/en/stable/classes/class_projectsettings.html#class-projectsettings)
-
-Configs listed there are formatted like `section/key/maybe/more/key`. Example: For `application/config/name` the section would be `application` and they key would be `config/name`
 
 ### GitVersion
 
@@ -133,7 +139,7 @@ steps:
       value: ${{ env.semVer }} # gitversion sets a number of env vars to choose from
 ```
 
-## Exporting with Different Main Scenes for Different Platforms
+### Exporting with Different Main Scenes for Different Platforms
 
 You can use the `edit-config` action to set a different main scene before each export. For example, to export a Windows build with one main scene and a Web build with another:
 
@@ -234,4 +240,5 @@ steps:
 ## 🛟 Need Help? 🛟
 
 Open an issue or discussion in this repo!
+
 
