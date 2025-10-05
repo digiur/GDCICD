@@ -1,4 +1,4 @@
-# 🧙‍♂️ Godot CI/CD GitHub Actions 🧙‍♂️
+# 🧙‍♂️ Godot CI/CD GitHub Actions
 
 ## Things it can do now
 
@@ -18,7 +18,7 @@
 
 - This project is under active early development and subject to change. Thanks to github's action versioning with tags, pinned versions of actions will not change, but may become unsupported quickly
 
-# 🚀 Quick Start 🚀
+# 🚀 Quick Start
 
 **Minimum possible workflow that fetches the engine, builds a project, and publishes to Itch.io**
 
@@ -69,12 +69,12 @@ These can easily be found in the URL of your game's itch.io page.
 - Go to your repo's Actions tab and select your new 'Godot Build and Publish to Itch.io' action in the left column
 - You should see a message 'This workflow has a `workflow_dispatch` event trigger.' and a 'Run Workflow' button to run the workflow
 
-### 🪄 Your project will build and deploy to itchio! 🪄
+### Your project will build and deploy to itchio!
 
 - Any errors or warnings will be printed to the action's output with suggestions for fixes
 - Open an issue or start a discussion on this repo if you need help!
 
-# 🦄 Upgrade Options! 🦄
+# 🦄 Upgrade Options!
 
 ## Run automatically
 
@@ -237,8 +237,9 @@ steps:
         include-hidden-files: true
 ```
 
-## 🛟 Need Help? 🛟
+## 🛟 Need Help?
 
 Open an issue or discussion in this repo!
+
 
 
