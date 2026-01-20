@@ -3,7 +3,7 @@ name: 'Edit project.godot File'
 description: 'Set configurations in project.godot files for dynamic main scenes, versioning, etc...'
 
 # Engine-provided configurations can be found here: https://docs.godotengine.org/en/stable/classes/class_projectsettings.html#class-projectsettings
-# Configs listed in that documentation are formatted like `section/key`
+# Configs listed in that documentation are formatted like `section/key/more_key`
 # For `application/config/name` the section would be `application` and they key would be `config/name`
 
 inputs:

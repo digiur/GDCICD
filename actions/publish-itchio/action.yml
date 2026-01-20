@@ -24,7 +24,7 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 🧾 Preflight Checklist 🧾
+    - name: Action Plan
       run: |
         set -e
         echo "build_path: ${{ inputs.build_path }}"
@@ -40,11 +40,11 @@ runs:
         fi
       shell: bash
 
-    - name: 🛰️ Downloading butler... 📡
+    - name: Downloading butler...
       if: env.SKIP_DOWNLOAD == 'false'
       run: |
         set -e
-        wget -O butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+        wget -O butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
         echo "Butler downloaded. File details:"
         ls -lh butler.zip
         unzip butler.zip
@@ -53,7 +53,7 @@ runs:
         ./butler -V
       shell: bash
 
-    - name: 🚀 Launch the Build to Itch.io 🚀
+    - name: Deploy to Itch.io
       run: |
         set -e
         echo "Pushing to Itch.io with Butler..."

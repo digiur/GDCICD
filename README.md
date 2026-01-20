@@ -42,7 +42,7 @@ jobs:
 ### 1. Define an HTML5 export preset named 'web' in your project
 
 - In the editor go to **project > export**
-- Create a new HTML5 export named 'web'
+- Create a new HTML5 export named 'web' (Godot defaults to 'Web' change it to 'web')
 - More info [here](https://docs.godotengine.org/en/latest/tutorials/export/exporting_for_web.html)
 
 ### 2. Add a file `.github/workflows/gdcicd.yml` to your github repo and put the above snippit into it
