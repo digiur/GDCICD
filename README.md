@@ -31,9 +31,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-  - uses: digiur/GDCICD/actions/fetch-engine@v0.18
-  - uses: digiur/GDCICD/actions/build-project@v0.18
-  - uses: digiur/GDCICD/actions/publish-itchio@v0.18
+  - uses: digiur/GDCICD/actions/fetch-engine@v0.19
+  - uses: digiur/GDCICD/actions/build-project@v0.19
+  - uses: digiur/GDCICD/actions/publish-itchio@v0.19
         with:
           itchio_target: "<ICHIO_USER>/<ICHIO_PROJECT>:web"
           api_key: ${{ secrets.ITCHIO_API_KEY }}
@@ -244,3 +244,4 @@ steps:
 ## Need Help? 🛟
 
 Open an issue or discussion in this repo!
+
